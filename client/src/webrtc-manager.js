@@ -14,6 +14,7 @@ export class WebRtcManager {
     this.peerConnection = null;
     this.dataChannel = null;
     this.iceServers = [];
+    this.iceCandidateQueue = [];
     this.activePartnerId = null;
     this.isHost = false;
 
@@ -103,7 +104,8 @@ export class WebRtcManager {
 
         if (msg.sdpAnswer && this.peerConnection) {
           await this.peerConnection.setRemoteDescription(new RTCSessionDescription(msg.sdpAnswer));
-          this.onStatusChange('in_session', `In Session with ${msg.targetId}`);
+          await this._drainIceCandidates();
+          this.onStatusChange('in_session', `I økt med ${msg.targetId}`);
           this._startTelemetryLoop();
         }
         break;
@@ -125,7 +127,7 @@ export class WebRtcManager {
                 type: 'dial_answer',
                 targetId: msg.fromId,
                 accepted: false,
-                reason: reason || 'Host rejected connection.'
+                reason: reason || 'Verten avviste tilkoblingsforespørselen.'
               })
             );
           }
@@ -134,12 +136,14 @@ export class WebRtcManager {
       }
 
       case 'ice_candidate': {
-        if (this.peerConnection && msg.candidate) {
+        if (this.peerConnection && this.peerConnection.remoteDescription && msg.candidate) {
           try {
             await this.peerConnection.addIceCandidate(new RTCIceCandidate(msg.candidate));
           } catch (e) {
-            console.error('[WebRTC] Error adding ICE candidate:', e);
+            console.warn('[WebRTC] Error adding ICE candidate:', e);
           }
+        } else if (msg.candidate) {
+          this.iceCandidateQueue.push(msg.candidate);
         }
         break;
       }
@@ -246,6 +250,7 @@ export class WebRtcManager {
     };
 
     await this.peerConnection.setRemoteDescription(new RTCSessionDescription(sdpOffer));
+    await this._drainIceCandidates();
     const answer = await this.peerConnection.createAnswer();
     await this.peerConnection.setLocalDescription(answer);
 
@@ -258,8 +263,21 @@ export class WebRtcManager {
       })
     );
 
-    this.onStatusChange('in_session', `Controlled by ${callerId}`);
+    this.onStatusChange('in_session', `Fjernstyres av ${callerId}`);
     this._startTelemetryLoop();
+  }
+
+  async _drainIceCandidates() {
+    while (this.iceCandidateQueue.length > 0) {
+      const candidate = this.iceCandidateQueue.shift();
+      try {
+        if (this.peerConnection && this.peerConnection.remoteDescription) {
+          await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        }
+      } catch (e) {
+        console.warn('[WebRTC] Error adding queued candidate:', e);
+      }
+    }
   }
 
   sendInputEvent(eventData) {

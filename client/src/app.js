@@ -1,8 +1,13 @@
 import { WebRtcManager } from './webrtc-manager.js';
 
-// Application State
+// Check Tauri native environment
+const isTauri = typeof window.__TAURI__ !== 'undefined';
+
+// Application State (In browser, use sessionStorage so two tabs have unique IDs for testing)
+const storage = isTauri ? localStorage : sessionStorage;
+
 const state = {
-  localId: localStorage.getItem('pendesk_device_id') || '',
+  localId: storage.getItem('pendesk_device_id') || '',
   localPasscode: generateRandomPasscode(),
   signalingUrl: localStorage.getItem('pendesk_signaling_url') || 'wss://hjelp.penrose.no/ws',
   recentConnections: JSON.parse(localStorage.getItem('pendesk_recent') || '[]'),
@@ -82,12 +87,12 @@ const rtc = new WebRtcManager({
 
   onRegistered: (assignedId) => {
     state.localId = assignedId;
-    localStorage.setItem('pendesk_device_id', assignedId);
+    storage.setItem('pendesk_device_id', assignedId);
     elLocalId.textContent = assignedId;
   },
 
   onIncomingCall: async ({ fromId, deviceName, accept, reject }) => {
-    const ok = confirm(`Incoming Remote Desktop Connection:\nPartner: ${fromId} (${deviceName})\n\nAllow this operator to control your screen?`);
+    const ok = confirm(`Innkommende forespørsel om fjernhjelp:\nOperatør: ${fromId} (${deviceName})\n\nVil du tillate tilkobling og dele skjermen din?`);
     if (ok) {
       let localStream = null;
       try {
@@ -100,17 +105,17 @@ const rtc = new WebRtcManager({
           audio: true
         });
       } catch (err) {
-        console.warn('Could not acquire local screen capture via browser API:', err);
+        console.warn('Kunne ikke hente skjermopptak via nettleser-API:', err);
       }
       await accept(localStream);
-      alert(`Connected! Remote operator ${fromId} is now viewing and controlling.`);
     } else {
-      reject('User declined remote connection request');
+      reject('Brukeren avslo tilkoblingsforespørselen');
     }
   },
 
   onRemoteTrack: (stream) => {
     elRemoteVideo.srcObject = stream;
+    elRemoteVideo.play().catch((e) => console.warn('Autoplay info:', e));
     elSessionOverlay.classList.add('active');
     state.inSession = true;
   },

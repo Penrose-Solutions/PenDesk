@@ -4,7 +4,7 @@ import { WebSocketServer } from './websocket.js';
 
 const PORT = parseInt(process.env.PORT || '8080', 10);
 const HOST = process.env.HOST || '0.0.0.0';
-const TURN_DOMAIN = process.env.TURN_DOMAIN || 'turn.yourdomain.com';
+const TURN_DOMAIN = process.env.TURN_DOMAIN || 'hjelp.penrose.no';
 const TURN_SECRET = process.env.TURN_SECRET || 'pendesk_secure_secret_replace_in_prod';
 const STUN_PORT = process.env.STUN_PORT || '3478';
 const TURN_PORT = process.env.TURN_PORT || '3478';
@@ -22,8 +22,10 @@ function generateNineDigitId() {
 }
 
 function generateTurnCredentials(username, secret, ttlSeconds = 86400) {
+  // Coturn usernames MUST NOT contain spaces or special characters
+  const safeUser = (username || 'guest').replace(/[^a-zA-Z0-9_]/g, '') || 'client';
   const expiry = Math.floor(Date.now() / 1000) + ttlSeconds;
-  const user = `${expiry}:${username}`;
+  const user = `${expiry}:${safeUser}`;
   const hmac = crypto.createHmac('sha1', secret);
   hmac.update(user);
   const password = hmac.digest('base64');
@@ -34,7 +36,10 @@ function getIceServers(clientId) {
   const creds = generateTurnCredentials(clientId || 'guest', TURN_SECRET);
   return [
     {
-      urls: [`stun:${TURN_DOMAIN}:${STUN_PORT}`]
+      urls: [
+        `stun:${TURN_DOMAIN}:${STUN_PORT}`,
+        'stun:stun.l.google.com:19302'
+      ]
     },
     {
       urls: [
@@ -74,6 +79,13 @@ const server = http.createServer((req, res) => {
         uptime: Math.floor(process.uptime())
       })
     );
+    return;
+  }
+
+  // Legacy heartbeat & sysinfo endpoint stubs
+  if (url.pathname === '/api/heartbeat' || url.pathname === '/api/sysinfo') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok' }));
     return;
   }
 
@@ -136,14 +148,22 @@ wss.on('connection', (ws) => {
 
     switch (msg.type) {
       case 'register': {
-        // Formatted or raw ID check
         let id = msg.clientId;
         if (!id || id.trim().length === 0) {
           id = generateNineDigitId();
         }
 
-        // Normalize spacing: "123 456 789"
         const cleanId = id.replace(/\s+/g, ' ').trim();
+
+        // If another socket was registered with this ID, close the previous one cleanly
+        if (peers.has(cleanId)) {
+          const old = peers.get(cleanId);
+          if (old.ws !== ws) {
+            console.log(`[Signaling] Re-registering ID ${cleanId}, closing previous connection`);
+            old.ws.close();
+          }
+        }
+
         currentClientId = cleanId;
 
         peers.set(cleanId, {
@@ -170,8 +190,19 @@ wss.on('connection', (ws) => {
       }
 
       case 'dial': {
-        // Caller initiates connection to Target
         const targetId = (msg.targetId || '').trim();
+
+        // Prevent self-connection
+        if (targetId === currentClientId) {
+          send({
+            type: 'dial_response',
+            targetId,
+            success: false,
+            reason: 'Du kan ikke koble til din egen enhet. Åpne et inkognitovindu for å teste med en separat ID.'
+          });
+          return;
+        }
+
         const target = peers.get(targetId);
 
         if (!target) {
@@ -179,7 +210,7 @@ wss.on('connection', (ws) => {
             type: 'dial_response',
             targetId,
             success: false,
-            reason: 'Target peer is offline or ID does not exist.'
+            reason: 'Partner-enheten er ikke pålogget eller ID finnes ikke.'
           });
           return;
         }
@@ -190,7 +221,7 @@ wss.on('connection', (ws) => {
             type: 'dial_response',
             targetId,
             success: false,
-            reason: 'Incorrect password for remote host.'
+            reason: 'Feil engangskode for fjernstyring.'
           });
           return;
         }
@@ -202,7 +233,7 @@ wss.on('connection', (ws) => {
           JSON.stringify({
             type: 'incoming_connection',
             fromId: currentClientId,
-            deviceName: msg.deviceName || 'Remote Operator',
+            deviceName: msg.deviceName || 'Fjernhjelp Operatør',
             sdpOffer: msg.sdpOffer
           })
         );
@@ -210,7 +241,6 @@ wss.on('connection', (ws) => {
       }
 
       case 'dial_answer': {
-        // Target host responds with SDP answer or rejection
         const targetId = (msg.targetId || '').trim();
         const caller = peers.get(targetId);
 
@@ -230,7 +260,6 @@ wss.on('connection', (ws) => {
       }
 
       case 'ice_candidate': {
-        // Forward ICE candidates between peers
         const targetId = (msg.targetId || '').trim();
         const target = peers.get(targetId);
 
@@ -254,7 +283,7 @@ wss.on('connection', (ws) => {
             JSON.stringify({
               type: 'session_ended',
               fromId: currentClientId,
-              reason: msg.reason || 'User disconnected session'
+              reason: msg.reason || 'Økten ble avsluttet av brukeren.'
             })
           );
         }
@@ -268,8 +297,11 @@ wss.on('connection', (ws) => {
 
   ws.on('close', () => {
     if (currentClientId && peers.has(currentClientId)) {
-      console.log(`[Signaling] Peer disconnected: ${currentClientId}`);
-      peers.delete(currentClientId);
+      const record = peers.get(currentClientId);
+      if (record.ws === ws) {
+        console.log(`[Signaling] Peer disconnected: ${currentClientId}`);
+        peers.delete(currentClientId);
+      }
     }
   });
 
