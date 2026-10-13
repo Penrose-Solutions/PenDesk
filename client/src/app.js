@@ -4,7 +4,7 @@ import { WebRtcManager } from './webrtc-manager.js';
 const state = {
   localId: localStorage.getItem('pendesk_device_id') || '',
   localPasscode: generateRandomPasscode(),
-  signalingUrl: localStorage.getItem('pendesk_signaling_url') || 'ws://localhost:8080',
+  signalingUrl: localStorage.getItem('pendesk_signaling_url') || 'wss://hjelp.penrose.no/ws',
   recentConnections: JSON.parse(localStorage.getItem('pendesk_recent') || '[]'),
   inSession: false
 };

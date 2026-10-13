@@ -1,0 +1,29 @@
+services:
+  # PenDesk Signaling & Rendezvous Service
+  signaling:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: pendesk-signaling
+    restart: unless-stopped
+    environment:
+      - PORT=8080
+      - HOST=0.0.0.0
+      - TURN_DOMAIN=${TURN_DOMAIN:-hjelp.penrose.no}
+      - TURN_SECRET=${TURN_SECRET}
+      - STUN_PORT=3478
+      - TURN_PORT=3478
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  # Coturn STUN & TURN Relay for NAT Traversal
+  coturn:
+    image: coturn/coturn:latest
+    container_name: pendesk-coturn
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./turnserver.generated.conf:/etc/coturn/turnserver.conf:ro
+    command:
+      - "-c"
+      - "/etc/coturn/turnserver.conf"

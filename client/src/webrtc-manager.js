@@ -5,7 +5,7 @@
 
 export class WebRtcManager {
   constructor(options = {}) {
-    this.signalingUrl = options.signalingUrl || 'ws://localhost:8080';
+    this.signalingUrl = options.signalingUrl || 'wss://hjelp.penrose.no/ws';
     this.clientId = options.clientId || null;
     this.password = options.password || '';
     this.deviceName = options.deviceName || 'PenDesk Client';
