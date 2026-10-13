@@ -593,6 +593,10 @@ body {
   transition: all var(--transition-fast);
 }
 
+.toolbar-btn * {
+  pointer-events: none;
+}
+
 .toolbar-btn:hover {
   color: var(--text-primary);
   background: var(--bg-subtle-hover);
@@ -606,6 +610,17 @@ body {
 .toolbar-btn.btn-danger:hover {
   background: var(--accent-danger);
   color: #FFFFFF;
+}
+
+.btn-connect.btn-disconnect-active {
+  background: var(--accent-danger) !important;
+  border-color: var(--accent-danger) !important;
+  color: #FFFFFF !important;
+}
+
+.btn-connect.btn-disconnect-active:hover {
+  background: #DC2626 !important;
+  border-color: #DC2626 !important;
 }
 
 /* Modal Dialog */

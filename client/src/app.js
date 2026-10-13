@@ -96,6 +96,10 @@ const elBtnAcceptIncoming = document.getElementById('btn-accept-incoming');
 const elBtnRejectIncoming = document.getElementById('btn-reject-incoming');
 const elStreamPlaceholder = document.getElementById('stream-placeholder');
 
+const elHostSessionBanner = document.getElementById('host-session-banner');
+const elHostSessionText = document.getElementById('host-session-text');
+const elBtnHostDisconnect = document.getElementById('btn-host-disconnect');
+
 async function invokeTauri(cmd, args = {}) {
   if (isTauri && window.__TAURI__.core) {
     return await window.__TAURI__.core.invoke(cmd, args);
@@ -141,11 +145,26 @@ const rtc = new WebRtcManager({
             },
             audio: false
           });
+
+          if (localStream) {
+            localStream.getVideoTracks().forEach((track) => {
+              track.onended = () => {
+                console.log('[PenDesk] Host stopped screen sharing via native browser bar');
+                rtc.disconnectSession('Skjermdeling ble stoppet av verten.');
+              };
+            });
+          }
         } catch (err) {
           console.warn('Kunne ikke hente skjermopptak:', err);
           alert('Kunne ikke hente skjermopptak: ' + err.message);
         }
+
         await accept(localStream);
+
+        if (elHostSessionBanner) {
+          if (elHostSessionText) elHostSessionText.textContent = `Du fjernstyres nå av ${fromId}.`;
+          elHostSessionBanner.style.display = 'flex';
+        }
       };
 
       const handleReject = () => {
@@ -181,6 +200,9 @@ const rtc = new WebRtcManager({
     }
     if (elSessionOverlay) elSessionOverlay.classList.add('active');
     state.inSession = true;
+
+    if (elBtnConnectText) elBtnConnectText.textContent = 'Avslutt økt / Koble fra';
+    if (elBtnConnect) elBtnConnect.classList.add('btn-disconnect-active');
   },
 
   onDataMessage: async (rawData) => {
@@ -201,9 +223,31 @@ const rtc = new WebRtcManager({
 
   onSessionEnded: (reason) => {
     if (elSessionOverlay) elSessionOverlay.classList.remove('active');
+    if (elHostSessionBanner) elHostSessionBanner.style.display = 'none';
+    if (elStreamPlaceholder) elStreamPlaceholder.style.display = 'flex';
+    if (elRemoteVideo) {
+      elRemoteVideo.style.display = 'none';
+      elRemoteVideo.srcObject = null;
+    }
     state.inSession = false;
-    if (elRemoteVideo) elRemoteVideo.srcObject = null;
-    alert(reason || 'Økten ble avsluttet.');
+
+    // Reset connect button in Card 2
+    if (elBtnConnectText) elBtnConnectText.textContent = 'Koble til enhet';
+    if (elBtnConnect) {
+      elBtnConnect.classList.remove('btn-disconnect-active');
+      elBtnConnect.style.opacity = '1';
+    }
+
+    // Reset status pill to ready
+    if (elStatusPill) elStatusPill.className = 'status-pill';
+    if (elStatusText) elStatusText.textContent = 'Tilkoblet VPS | Klar';
+
+    // Refresh one-time passcode for security
+    state.localPasscode = generateRandomPasscode();
+    if (elLocalPass) elLocalPass.textContent = state.localPasscode;
+    rtc.updateCredentials(state.localPasscode);
+
+    console.log('[PenDesk] Økt avsluttet:', reason);
   }
 });
 
@@ -246,7 +290,15 @@ function setupEventListeners() {
   }
 
   if (elBtnConnect) {
-    elBtnConnect.addEventListener('click', async () => {
+    elBtnConnect.addEventListener('click', async (e) => {
+      e.preventDefault();
+
+      // If already in an active session, clicking this button disconnects cleanly
+      if (state.inSession) {
+        rtc.disconnectSession('Du avsluttet økten.');
+        return;
+      }
+
       const targetId = elRemoteIdInput.value.trim();
       const pass = elRemotePassInput.value.trim();
 
@@ -269,16 +321,29 @@ function setupEventListeners() {
       } catch (err) {
         if (elSessionOverlay) elSessionOverlay.classList.remove('active');
         alert('Kunne ikke opprette tilkobling: ' + err.message);
-      } finally {
         elBtnConnectText.textContent = 'Koble til enhet';
         elBtnConnect.style.opacity = '1';
       }
     });
   }
 
+  // Operator Disconnect button in fullscreen overlay toolbar
   if (elBtnDisconnect) {
-    elBtnDisconnect.addEventListener('click', () => {
-      rtc.disconnectSession();
+    elBtnDisconnect.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[PenDesk] Operator disconnect clicked');
+      rtc.disconnectSession('Du koblet fra økten.');
+    });
+  }
+
+  // Host Disconnect button in host session banner
+  if (elBtnHostDisconnect) {
+    elBtnHostDisconnect.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[PenDesk] Host disconnect clicked');
+      rtc.disconnectSession('Verten avsluttet fjernstyringen.');
     });
   }
 

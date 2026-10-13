@@ -13,6 +13,7 @@ export class WebRtcManager {
     this.ws = null;
     this.peerConnection = null;
     this.dataChannel = null;
+    this.localStream = null;
     this.iceServers = [];
     this.iceCandidateQueue = [];
     this.activePartnerId = null;
@@ -182,8 +183,9 @@ export class WebRtcManager {
       }
 
       case 'session_ended': {
-        this.onSessionEnded(msg.reason);
         this._teardownPeer();
+        this.onStatusChange('ready', 'Tilkoblet VPS | Klar');
+        this.onSessionEnded(msg.reason || 'Partneren avsluttet økten.');
         break;
       }
     }
@@ -199,6 +201,22 @@ export class WebRtcManager {
       iceTransportPolicy: 'all',
       bundlePolicy: 'max-bundle'
     });
+
+    this.peerConnection.onconnectionstatechange = () => {
+      const connState = this.peerConnection ? this.peerConnection.connectionState : 'closed';
+      console.log('[WebRTC] Operator connection state:', connState);
+      if (connState === 'disconnected' || connState === 'failed') {
+        this.disconnectSession('WebRTC-tilkoblingen ble avbrutt.');
+      }
+    };
+
+    this.peerConnection.oniceconnectionstatechange = () => {
+      const iceState = this.peerConnection ? this.peerConnection.iceConnectionState : 'closed';
+      console.log('[WebRTC] Operator ICE state:', iceState);
+      if (iceState === 'disconnected' || iceState === 'failed') {
+        this.disconnectSession('Nettverksforbindelsen ble avbrutt.');
+      }
+    };
 
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
@@ -259,9 +277,28 @@ export class WebRtcManager {
   }
 
   async _acceptIncoming(callerId, sdpOffer, localMediaStream) {
+    this.localStream = localMediaStream;
+    this.activePartnerId = callerId;
+
     this.peerConnection = new RTCPeerConnection({
       iceServers: this.iceServers
     });
+
+    this.peerConnection.onconnectionstatechange = () => {
+      const connState = this.peerConnection ? this.peerConnection.connectionState : 'closed';
+      console.log('[WebRTC] Host connection state:', connState);
+      if (connState === 'disconnected' || connState === 'failed') {
+        this.disconnectSession('WebRTC-tilkoblingen ble avbrutt.');
+      }
+    };
+
+    this.peerConnection.oniceconnectionstatechange = () => {
+      const iceState = this.peerConnection ? this.peerConnection.iceConnectionState : 'closed';
+      console.log('[WebRTC] Host ICE state:', iceState);
+      if (iceState === 'disconnected' || iceState === 'failed') {
+        this.disconnectSession('Nettverksforbindelsen ble avbrutt.');
+      }
+    };
 
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
@@ -275,9 +312,13 @@ export class WebRtcManager {
       }
     };
 
-    // Attach local screen capture tracks if available
+    // Attach local screen capture tracks if available and hook track.onended
     if (localMediaStream) {
       for (const track of localMediaStream.getTracks()) {
+        track.onended = () => {
+          console.log('[WebRTC] Host local media track ended by user');
+          this.disconnectSession('Skjermdeling ble stoppet av verten.');
+        };
         this.peerConnection.addTrack(track, localMediaStream);
       }
     }
@@ -327,17 +368,24 @@ export class WebRtcManager {
     }
   }
 
-  disconnectSession() {
-    if (this.activePartnerId && this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(
-        JSON.stringify({
-          type: 'hangup',
-          targetId: this.activePartnerId
-        })
-      );
+  disconnectSession(reason = 'Økten ble avsluttet.') {
+    const partnerId = this.activePartnerId;
+    if (partnerId && this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try {
+        this.ws.send(
+          JSON.stringify({
+            type: 'hangup',
+            targetId: partnerId,
+            reason
+          })
+        );
+      } catch (e) {
+        console.warn('[WebRTC] Error sending hangup:', e);
+      }
     }
     this._teardownPeer();
-    this.onSessionEnded('Session terminated by user');
+    this.onStatusChange('ready', 'Tilkoblet VPS | Klar');
+    this.onSessionEnded(reason);
   }
 
   _teardownPeer() {
@@ -345,16 +393,34 @@ export class WebRtcManager {
       clearInterval(this.telemetryInterval);
       this.telemetryInterval = null;
     }
+    if (this.localStream) {
+      try {
+        this.localStream.getTracks().forEach((track) => {
+          track.onended = null;
+          track.stop();
+        });
+      } catch (e) {
+        console.warn('[WebRTC] Error stopping local tracks:', e);
+      }
+      this.localStream = null;
+    }
     if (this.dataChannel) {
-      this.dataChannel.close();
+      try { this.dataChannel.close(); } catch {}
       this.dataChannel = null;
     }
     if (this.peerConnection) {
-      this.peerConnection.close();
+      try {
+        this.peerConnection.onconnectionstatechange = null;
+        this.peerConnection.oniceconnectionstatechange = null;
+        this.peerConnection.ontrack = null;
+        this.peerConnection.onicecandidate = null;
+        this.peerConnection.close();
+      } catch {}
       this.peerConnection = null;
     }
     this.activePartnerId = null;
     this.isHost = false;
+    this.iceCandidateQueue = [];
   }
 
   _startTelemetryLoop() {

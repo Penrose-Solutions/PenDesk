@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=2027_v8" />
 </head>
 <body>
   <div id="app">
@@ -73,6 +73,17 @@
           <span>Skjermopptak eller tilgjengelighetstillatelse må aktiveres i macOS for fjernstyring.</span>
         </div>
         <button class="btn-permission" id="btn-request-perms">Åpne Systeminnstillinger</button>
+      </div>
+
+      <!-- Host Active Remote Control Alert Banner -->
+      <div class="permission-banner" id="host-session-banner" style="display: none; border-left: 3px solid var(--accent-blue); background: var(--bg-surface-elevated);">
+        <div class="banner-text">
+          <span class="status-dot" style="background: var(--accent-success); width: 10px; height: 10px;"></span>
+          <span id="host-session-text">Du fjernstyres nå av partner.</span>
+        </div>
+        <button class="toolbar-btn btn-danger" id="btn-host-disconnect" style="padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;">
+          Avslutt fjernstyring
+        </button>
       </div>
 
       <!-- Dual Desk Panel -->
@@ -288,6 +299,6 @@
     </div>
   </div>
 
-  <script type="module" src="app.js?v=2027_v6"></script>
+  <script type="module" src="app.js?v=2027_v8"></script>
 </body>
 </html>

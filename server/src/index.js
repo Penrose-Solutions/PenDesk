@@ -246,6 +246,11 @@ wss.on('connection', (ws) => {
 
         if (caller) {
           console.log(`[Signaling] Dial Answer: ${currentClientId} -> ${targetId} (accepted=${msg.accepted})`);
+          if (msg.accepted) {
+            caller.activePartnerId = currentClientId;
+            const currentHost = peers.get(currentClientId);
+            if (currentHost) currentHost.activePartnerId = targetId;
+          }
           caller.ws.send(
             JSON.stringify({
               type: 'dial_response',
@@ -279,6 +284,7 @@ wss.on('connection', (ws) => {
         const targetId = (msg.targetId || '').trim();
         const target = peers.get(targetId);
         if (target) {
+          target.activePartnerId = null;
           target.ws.send(
             JSON.stringify({
               type: 'session_ended',
@@ -287,6 +293,8 @@ wss.on('connection', (ws) => {
             })
           );
         }
+        const sender = peers.get(currentClientId);
+        if (sender) sender.activePartnerId = null;
         break;
       }
 
@@ -300,6 +308,20 @@ wss.on('connection', (ws) => {
       const record = peers.get(currentClientId);
       if (record.ws === ws) {
         console.log(`[Signaling] Peer disconnected: ${currentClientId}`);
+        if (record.activePartnerId) {
+          const partner = peers.get(record.activePartnerId);
+          if (partner && partner.ws && partner.ws.readyState === WebSocket.OPEN) {
+            console.log(`[Signaling] Notifying partner ${record.activePartnerId} that ${currentClientId} disconnected`);
+            partner.activePartnerId = null;
+            partner.ws.send(
+              JSON.stringify({
+                type: 'session_ended',
+                fromId: currentClientId,
+                reason: 'Partneren lukket nettleseren eller mistet tilkoblingen.'
+              })
+            );
+          }
+        }
         peers.delete(currentClientId);
       }
     }
