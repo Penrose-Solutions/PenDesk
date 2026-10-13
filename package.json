@@ -1,0 +1,14 @@
+{
+  "name": "pendesk-workspace",
+  "version": "1.0.0",
+  "description": "PenDesk Workspace - Cross-Platform Remote Desktop",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:ui": "npm --prefix client run dev:ui",
+    "dev:server": "npm --prefix server start",
+    "check:rust": "npm --prefix client run check:rust"
+  },
+  "author": "Penrose Systems",
+  "license": "MIT"
+}

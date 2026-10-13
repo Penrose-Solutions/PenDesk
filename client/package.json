@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "PenDesk Desktop Client - Cross-Platform Remote Desktop (Tauri v2 + WebRTC)",
   "private": true,
+  "type": "module",
   "scripts": {
-    "dev:ui": "node -e \"require('http').createServer((req,res) => { const fs=require('fs'), path=require('path'); let p=req.url==='/'?'/index.html':req.url; try { const mime = p.endsWith('.css')?'text/css':p.endsWith('.js')?'application/javascript':'text/html'; res.writeHead(200,{'Content-Type':mime}); fs.createReadStream(path.join('src',p)).pipe(res); } catch(e){res.writeHead(404);res.end();} }).listen(3000,()=>console.log('UI Preview running at http://localhost:3000'))\"",
+    "dev:ui": "node dev-server.js",
     "build:rust": "cargo build --manifest-path src-tauri/Cargo.toml",
     "check:rust": "cargo check --offline --manifest-path src-tauri/Cargo.toml"
   },
