@@ -45,10 +45,24 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log('=======================================================');
-  console.log(`  PenDesk UI Preview Server is running!`);
-  console.log(`  Local URL:   http://localhost:${PORT}`);
-  console.log(`  Network URL: http://0.0.0.0:${PORT}`);
-  console.log('=======================================================');
+function startServer(p) {
+  server.listen(p, '0.0.0.0', () => {
+    console.log('=======================================================');
+    console.log(`  PenDesk UI Preview Server is running!`);
+    console.log(`  Local URL:   http://localhost:${p}`);
+    console.log(`  Network URL: http://0.0.0.0:${p}`);
+    console.log('=======================================================');
+  });
+}
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    const nextPort = PORT + 1;
+    console.warn(`[!] Port ${PORT} is occupied, falling back to port ${nextPort}...`);
+    startServer(nextPort);
+  } else {
+    console.error('Server error:', err);
+  }
 });
+
+startServer(PORT);
