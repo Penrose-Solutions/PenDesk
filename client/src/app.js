@@ -1,15 +1,32 @@
-import { WebRtcManager } from './webrtc-manager.js';
+import { WebRtcManager } from './webrtc-manager.js?v=2027_v4';
 
 // Check Tauri native environment
 const isTauri = typeof window.__TAURI__ !== 'undefined';
 
 // Application State (In browser, use sessionStorage so two tabs have unique IDs for testing)
-const storage = isTauri ? localStorage : sessionStorage;
+// Clean up any stale localhost URL from previous visits
+try {
+  const storedUrl = localStorage.getItem('pendesk_signaling_url');
+  if (storedUrl && storedUrl.includes('localhost') && window.location.protocol === 'https:') {
+    localStorage.removeItem('pendesk_signaling_url');
+  }
+} catch {}
+
+function resolveSignalingUrl() {
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    const custom = localStorage.getItem('pendesk_signaling_url');
+    if (custom && custom.startsWith('wss://') && !custom.includes('localhost')) {
+      return custom;
+    }
+    return `wss://${window.location.host}/ws`;
+  }
+  return localStorage.getItem('pendesk_signaling_url') || 'wss://hjelp.penrose.no/ws';
+}
 
 const state = {
   localId: storage.getItem('pendesk_device_id') || '',
   localPasscode: generateRandomPasscode(),
-  signalingUrl: localStorage.getItem('pendesk_signaling_url') || 'wss://hjelp.penrose.no/ws',
+  signalingUrl: resolveSignalingUrl(),
   recentConnections: JSON.parse(localStorage.getItem('pendesk_recent') || '[]'),
   inSession: false
 };

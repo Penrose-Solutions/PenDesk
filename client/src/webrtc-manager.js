@@ -32,15 +32,21 @@ export class WebRtcManager {
   connectSignaling() {
     this.onStatusChange('connecting', 'Connecting to VPS Signaling...');
 
+    if (this.ws) {
+      try { this.ws.close(); } catch {}
+      this.ws = null;
+    }
+
     try {
       this.ws = new WebSocket(this.signalingUrl);
     } catch (err) {
-      this.onStatusChange('offline', 'Failed to connect: ' + err.message);
+      this.onStatusChange('offline', 'Feil ved tilkobling: ' + err.message);
+      this._scheduleReconnect();
       return;
     }
 
     this.ws.onopen = () => {
-      this.onStatusChange('connected', 'Connected to VPS | Registering ID...');
+      this.onStatusChange('connected', 'Tilkoblet VPS | Tildeler ID...');
       this.ws.send(
         JSON.stringify({
           type: 'register',
@@ -49,6 +55,7 @@ export class WebRtcManager {
           deviceName: this.deviceName
         })
       );
+      this._startHeartbeat();
     };
 
     this.ws.onmessage = async (evt) => {
@@ -61,14 +68,40 @@ export class WebRtcManager {
     };
 
     this.ws.onclose = () => {
-      this.onStatusChange('offline', 'Disconnected from VPS');
+      this._stopHeartbeat();
+      this.onStatusChange('offline', 'Frakoblet fra VPS. Prøver igjen...');
       this._teardownPeer();
+      this._scheduleReconnect();
     };
 
     this.ws.onerror = (err) => {
-      console.error('[WebRTC] Signaling error:', err);
-      this.onStatusChange('offline', 'Signaling connection error');
+      console.warn('[WebRTC] Signaling socket error:', err);
     };
+  }
+
+  _startHeartbeat() {
+    this._stopHeartbeat();
+    this.heartbeatTimer = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ type: 'heartbeat' }));
+      }
+    }, 25000);
+  }
+
+  _stopHeartbeat() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+  }
+
+  _scheduleReconnect() {
+    if (this.reconnectTimer) return;
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      console.log('[WebRTC] Attempting reconnection to:', this.signalingUrl);
+      this.connectSignaling();
+    }, 3000);
   }
 
   updateCredentials(password) {
