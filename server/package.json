@@ -1,0 +1,25 @@
+{
+  "name": "pendesk-signaling-server",
+  "version": "1.0.0",
+  "description": "High-performance signaling and rendezvous server for PenDesk Remote Desktop",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node test/signaling.test.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "keywords": [
+    "remote-desktop",
+    "webrtc",
+    "signaling",
+    "stun",
+    "turn",
+    "pendesk"
+  ],
+  "author": "Penrose Systems",
+  "license": "MIT"
+}

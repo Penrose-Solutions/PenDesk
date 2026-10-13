@@ -1,0 +1,60 @@
+services:
+  # PenDesk Signaling & ICE Configuration Service
+  signaling:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    container_name: pendesk-signaling
+    restart: unless-stopped
+    environment:
+      - PORT=8080
+      - HOST=0.0.0.0
+      - TURN_DOMAIN=${TURN_DOMAIN:-turn.yourdomain.com}
+      - TURN_SECRET=${TURN_SECRET:-pendesk_secret}
+      - STUN_PORT=3478
+      - TURN_PORT=3478
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - pendesk-net
+
+  # Caddy Reverse Proxy & Automatic Let's Encrypt SSL
+  caddy:
+    image: caddy:2-alpine
+    container_name: pendesk-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - ACME_EMAIL=${ACME_EMAIL}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - signaling
+    networks:
+      - pendesk-net
+
+  # Coturn STUN and TURN Relay for NAT Traversal
+  coturn:
+    image: coturn/coturn:latest
+    container_name: pendesk-coturn
+    restart: unless-stopped
+    # Host networking is required on Linux VPS for efficient TURN UDP relay range (49152-65535)
+    network_mode: host
+    volumes:
+      - ./turnserver.generated.conf:/etc/coturn/turnserver.conf:ro
+    command:
+      - "-c"
+      - "/etc/coturn/turnserver.conf"
+
+networks:
+  pendesk-net:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

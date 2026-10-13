@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PenDesk — Secure Cross-Platform Remote Desktop</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo-badge" id="btn-logo" title="PenDesk Home">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#050b14" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
+          <path d="M7 8l3 3-3 3"></path>
+          <path d="M13 14h4"></path>
+        </svg>
+      </div>
+
+      <nav class="nav-group">
+        <button class="nav-item active" id="nav-remote" title="Remote Control">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+        </button>
+
+        <button class="nav-item" id="nav-history" title="Recent Sessions">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </button>
+      </nav>
+
+      <div class="nav-footer">
+        <button class="nav-item" id="btn-open-settings" title="VPS & Network Settings">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main View -->
+    <main class="main-view">
+      <!-- Top Header -->
+      <header class="top-bar">
+        <div class="app-title-group">
+          <h1>PenDesk Remote Desktop</h1>
+          <p id="vps-connection-label">VPS Signaling: Checking connection...</p>
+        </div>
+
+        <div class="status-pill connecting" id="status-pill">
+          <span class="status-dot"></span>
+          <span id="status-text">Connecting to VPS</span>
+        </div>
+      </header>
+
+      <!-- macOS Permission Notice (Conditionally Displayed) -->
+      <div class="permission-banner" id="permission-banner" style="display: none;">
+        <div class="banner-text">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span>Screen Recording or Accessibility permission required for remote control on macOS.</span>
+        </div>
+        <button class="btn-permission" id="btn-request-perms">Open System Settings</button>
+      </div>
+
+      <!-- Dual Desk Panel -->
+      <div class="desk-grid">
+        <!-- Card 1: Allow Remote Control (Host) -->
+        <section class="desk-card">
+          <div class="card-header">
+            <div class="card-icon-wrap">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <div>
+              <h2>This Device</h2>
+              <p>Share this ID and one-time password to allow control</p>
+            </div>
+          </div>
+
+          <!-- Local Desk ID -->
+          <div class="credential-block">
+            <span class="credential-label">Your PenDesk ID</span>
+            <div class="id-display-box">
+              <span class="id-digits" id="local-desk-id">--- --- ---</span>
+              <div class="credential-actions">
+                <button class="btn-icon-copy" id="btn-copy-id" title="Copy ID">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- One-Time Session Password -->
+          <div class="credential-block">
+            <span class="credential-label">One-Time Password</span>
+            <div class="id-display-box">
+              <span class="id-digits" id="local-passcode" style="font-size: 20px; color: #fff;">------</span>
+              <div class="credential-actions">
+                <button class="btn-icon-copy" id="btn-refresh-pass" title="Generate New Password">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                  </svg>
+                </button>
+                <button class="btn-icon-copy" id="btn-copy-pass" title="Copy Password">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Card 2: Control Remote Desk (Operator) -->
+        <section class="desk-card">
+          <div class="card-header">
+            <div class="card-icon-wrap" style="background: rgba(58, 123, 213, 0.15); color: #3a7bd5;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polygon points="10 8 16 12 10 16 10 8"></polygon>
+              </svg>
+            </div>
+            <div>
+              <h2>Control Remote Desk</h2>
+              <p>Enter the partner ID to start remote control session</p>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="credential-label" for="remote-id-input">Partner Device ID</label>
+            <input 
+              type="text" 
+              id="remote-id-input" 
+              class="input-field" 
+              placeholder="e.g. 582 194 301" 
+              maxlength="11" 
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="input-group">
+            <label class="credential-label" for="remote-pass-input">Session Password</label>
+            <input 
+              type="password" 
+              id="remote-pass-input" 
+              class="input-field" 
+              placeholder="Enter partner password" 
+              autocomplete="off"
+            />
+          </div>
+
+          <button class="btn-connect" id="btn-connect">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M5 12h14"></path>
+              <path d="M12 5l7 7-7 7"></path>
+            </svg>
+            <span id="btn-connect-text">Connect to Partner</span>
+          </button>
+        </section>
+      </div>
+
+      <!-- Recent Connections -->
+      <section class="recent-sessions">
+        <div class="recent-sessions-header">
+          <h3>Recent Connections</h3>
+          <span style="font-size: 11px; color: var(--text-dim);" id="recent-count">0 saved</span>
+        </div>
+        <div class="session-chips-list" id="recent-chips-list">
+          <span style="font-size: 12px; color: var(--text-dim);">No recent sessions yet. Connected partner desks will appear here.</span>
+        </div>
+      </section>
+    </main>
+
+    <!-- Active Remote Session Fullscreen Viewport -->
+    <div id="session-overlay">
+      <div class="floating-toolbar">
+        <div class="telemetry-tag">
+          <span class="status-dot" style="background: #10b981;"></span>
+          <span id="stat-latency">-- ms</span>
+          <span>|</span>
+          <span id="stat-fps">-- FPS</span>
+          <span>|</span>
+          <span id="stat-transport">WebRTC P2P</span>
+        </div>
+
+        <button class="toolbar-btn" id="btn-fullscreen" title="Toggle Fullscreen">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+          </svg>
+          <span>Fit Screen</span>
+        </button>
+
+        <button class="toolbar-btn" id="btn-send-cad" title="Send Ctrl+Alt+Del or System Menu">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"></path>
+          </svg>
+          <span>Action</span>
+        </button>
+
+        <button class="toolbar-btn btn-danger" id="btn-disconnect" title="Disconnect Session">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+            <line x1="12" y1="2" x2="12" y2="12"></line>
+          </svg>
+          <span>Disconnect</span>
+        </button>
+      </div>
+
+      <div class="canvas-container" id="stream-container">
+        <video id="remote-video" autoplay playsinline muted></video>
+        <canvas id="remote-stream-canvas" style="display: none;"></canvas>
+      </div>
+    </div>
+
+    <!-- VPS Settings Modal -->
+    <div class="modal-backdrop" id="settings-modal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>VPS & Network Settings</h3>
+          <button class="btn-close" id="btn-close-settings">&times;</button>
+        </div>
+
+        <div class="input-group">
+          <label class="credential-label" for="setting-vps-domain">Signaling Server URL (VPS)</label>
+          <input 
+            type="text" 
+            id="setting-vps-domain" 
+            class="input-field" 
+            value="ws://localhost:8080" 
+            placeholder="e.g. wss://pendesk.yourdomain.com/ws"
+          />
+          <span style="font-size: 11px; color: var(--text-dim);">Enter your VPS signaling endpoint (wss:// or ws://).</span>
+        </div>
+
+        <div class="input-group">
+          <label class="credential-label" for="setting-stun-turn">Custom STUN/TURN Override (Optional)</label>
+          <input 
+            type="text" 
+            id="setting-stun-turn" 
+            class="input-field" 
+            placeholder="Auto-detected from VPS"
+          />
+        </div>
+
+        <button class="btn-primary" id="btn-save-settings">Save and Reconnect</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

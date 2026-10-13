@@ -1,0 +1,35 @@
+# ============================================================
+# PenDesk Caddy Reverse Proxy & Automatic TLS Configuration
+# ============================================================
+
+{$DOMAIN:localhost} {
+    # Automatic HTTPS is handled by Caddy via Let's Encrypt / ZeroSSL
+
+    # Health check passthrough
+    handle /health {
+        reverse_proxy signaling:8080
+    }
+
+    # REST APIs for ICE servers & peer status
+    handle /api/* {
+        reverse_proxy signaling:8080
+    }
+
+    # WebSocket Signaling endpoint
+    handle /ws {
+        reverse_proxy signaling:8080 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # Root fallback
+    handle {
+        reverse_proxy signaling:8080
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}
