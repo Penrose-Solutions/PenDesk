@@ -1,36 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nb" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PenDesk — Secure Cross-Platform Remote Desktop</title>
+  <title>Penrose Fjernhjelp — Sikker fjernstyring</title>
+  
+  <!-- Penrose Typography (Inter, JetBrains Mono, Space Grotesk) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="app">
     <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="logo-badge" id="btn-logo" title="PenDesk Home">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#050b14" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-          <line x1="8" y1="21" x2="16" y2="21"></line>
-          <line x1="12" y1="17" x2="12" y2="21"></line>
-          <path d="M7 8l3 3-3 3"></path>
-          <path d="M13 14h4"></path>
-        </svg>
+      <div class="logo-badge" id="btn-logo" title="Penrose Fjernhjelp">
+        <img src="assets/penrose-symbol-white.png" alt="Penrose Solutions" />
       </div>
 
       <nav class="nav-group">
-        <button class="nav-item active" id="nav-remote" title="Remote Control">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button class="nav-item active" id="nav-remote" title="Fjernstyring">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="3" width="20" height="14" rx="2"></rect>
             <line x1="8" y1="21" x2="16" y2="21"></line>
             <line x1="12" y1="17" x2="12" y2="21"></line>
           </svg>
         </button>
 
-        <button class="nav-item" id="nav-history" title="Recent Sessions">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button class="nav-item" id="nav-history" title="Nylige tilkoblinger">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
@@ -38,8 +38,8 @@
       </nav>
 
       <div class="nav-footer">
-        <button class="nav-item" id="btn-open-settings" title="VPS & Network Settings">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button class="nav-item" id="btn-open-settings" title="Nettverks- og VPS-innstillinger">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
@@ -52,27 +52,27 @@
       <!-- Top Header -->
       <header class="top-bar">
         <div class="app-title-group">
-          <h1>PenDesk Remote Desktop</h1>
-          <p id="vps-connection-label">VPS Signaling: Checking connection...</p>
+          <h1>Penrose Fjernhjelp</h1>
+          <p id="vps-connection-label">VPS: hjelp.penrose.no</p>
         </div>
 
         <div class="status-pill connecting" id="status-pill">
           <span class="status-dot"></span>
-          <span id="status-text">Connecting to VPS</span>
+          <span id="status-text">Kobler til server...</span>
         </div>
       </header>
 
       <!-- macOS Permission Notice (Conditionally Displayed) -->
       <div class="permission-banner" id="permission-banner" style="display: none;">
         <div class="banner-text">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
             <line x1="12" y1="9" x2="12" y2="13"></line>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
           </svg>
-          <span>Screen Recording or Accessibility permission required for remote control on macOS.</span>
+          <span>Skjermopptak eller tilgjengelighetstillatelse må aktiveres i macOS for fjernstyring.</span>
         </div>
-        <button class="btn-permission" id="btn-request-perms">Open System Settings</button>
+        <button class="btn-permission" id="btn-request-perms">Åpne Systeminnstillinger</button>
       </div>
 
       <!-- Dual Desk Panel -->
@@ -86,18 +86,18 @@
               </svg>
             </div>
             <div>
-              <h2>This Device</h2>
-              <p>Share this ID and one-time password to allow control</p>
+              <h2>Denne enheten</h2>
+              <p>Oppgi ID og engangskode for å motta fjernhjelp</p>
             </div>
           </div>
 
           <!-- Local Desk ID -->
           <div class="credential-block">
-            <span class="credential-label">Your PenDesk ID</span>
+            <span class="credential-label">Din Penrose-ID</span>
             <div class="id-display-box">
               <span class="id-digits" id="local-desk-id">--- --- ---</span>
               <div class="credential-actions">
-                <button class="btn-icon-copy" id="btn-copy-id" title="Copy ID">
+                <button class="btn-icon-copy" id="btn-copy-id" title="Kopier ID">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -109,17 +109,17 @@
 
           <!-- One-Time Session Password -->
           <div class="credential-block">
-            <span class="credential-label">One-Time Password</span>
+            <span class="credential-label">Engangskode</span>
             <div class="id-display-box">
-              <span class="id-digits" id="local-passcode" style="font-size: 20px; color: #fff;">------</span>
+              <span class="id-digits" id="local-passcode" style="font-size: 20px;">------</span>
               <div class="credential-actions">
-                <button class="btn-icon-copy" id="btn-refresh-pass" title="Generate New Password">
+                <button class="btn-icon-copy" id="btn-refresh-pass" title="Generer ny kode">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="23 4 23 10 17 10"></polyline>
                     <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                   </svg>
                 </button>
-                <button class="btn-icon-copy" id="btn-copy-pass" title="Copy Password">
+                <button class="btn-icon-copy" id="btn-copy-pass" title="Kopier kode">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -133,37 +133,37 @@
         <!-- Card 2: Control Remote Desk (Operator) -->
         <section class="desk-card">
           <div class="card-header">
-            <div class="card-icon-wrap" style="background: rgba(58, 123, 213, 0.15); color: #3a7bd5;">
+            <div class="card-icon-wrap">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <polygon points="10 8 16 12 10 16 10 8"></polygon>
               </svg>
             </div>
             <div>
-              <h2>Control Remote Desk</h2>
-              <p>Enter the partner ID to start remote control session</p>
+              <h2>Fjernstyr enhet</h2>
+              <p>Tast inn partnerens ID for å starte økten</p>
             </div>
           </div>
 
           <div class="input-group">
-            <label class="credential-label" for="remote-id-input">Partner Device ID</label>
+            <label class="credential-label" for="remote-id-input">Partnerens ID</label>
             <input 
               type="text" 
               id="remote-id-input" 
               class="input-field" 
-              placeholder="e.g. 582 194 301" 
+              placeholder="f.eks. 582 194 301" 
               maxlength="11" 
               autocomplete="off"
             />
           </div>
 
           <div class="input-group">
-            <label class="credential-label" for="remote-pass-input">Session Password</label>
+            <label class="credential-label" for="remote-pass-input">Engangskode</label>
             <input 
               type="password" 
               id="remote-pass-input" 
               class="input-field" 
-              placeholder="Enter partner password" 
+              placeholder="Skriv inn partnerens kode" 
               autocomplete="off"
             />
           </div>
@@ -173,7 +173,7 @@
               <path d="M5 12h14"></path>
               <path d="M12 5l7 7-7 7"></path>
             </svg>
-            <span id="btn-connect-text">Connect to Partner</span>
+            <span id="btn-connect-text">Koble til enhet</span>
           </button>
         </section>
       </div>
@@ -181,11 +181,11 @@
       <!-- Recent Connections -->
       <section class="recent-sessions">
         <div class="recent-sessions-header">
-          <h3>Recent Connections</h3>
-          <span style="font-size: 11px; color: var(--text-dim);" id="recent-count">0 saved</span>
+          <h3>Nylige tilkoblinger</h3>
+          <span style="font-size: 11px; color: var(--text-muted);" id="recent-count">0 lagret</span>
         </div>
         <div class="session-chips-list" id="recent-chips-list">
-          <span style="font-size: 12px; color: var(--text-dim);">No recent sessions yet. Connected partner desks will appear here.</span>
+          <span style="font-size: 12px; color: var(--text-muted);">Ingen nylige økter ennå. Enheter du har koblet til vises her.</span>
         </div>
       </section>
     </main>
@@ -194,7 +194,7 @@
     <div id="session-overlay">
       <div class="floating-toolbar">
         <div class="telemetry-tag">
-          <span class="status-dot" style="background: #10b981;"></span>
+          <span class="status-dot" style="background: var(--accent-success);"></span>
           <span id="stat-latency">-- ms</span>
           <span>|</span>
           <span id="stat-fps">-- FPS</span>
@@ -202,27 +202,27 @@
           <span id="stat-transport">WebRTC P2P</span>
         </div>
 
-        <button class="toolbar-btn" id="btn-fullscreen" title="Toggle Fullscreen">
+        <button class="toolbar-btn" id="btn-fullscreen" title="Fullskjerm">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
           </svg>
-          <span>Fit Screen</span>
+          <span>Tilpass skjerm</span>
         </button>
 
-        <button class="toolbar-btn" id="btn-send-cad" title="Send Ctrl+Alt+Del or System Menu">
+        <button class="toolbar-btn" id="btn-send-cad" title="Send Ctrl+Alt+Del eller systemhandling">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="2" y="4" width="20" height="16" rx="2"></rect>
             <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"></path>
           </svg>
-          <span>Action</span>
+          <span>Handling</span>
         </button>
 
-        <button class="toolbar-btn btn-danger" id="btn-disconnect" title="Disconnect Session">
+        <button class="toolbar-btn btn-danger" id="btn-disconnect" title="Avslutt økt">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
             <line x1="12" y1="2" x2="12" y2="12"></line>
           </svg>
-          <span>Disconnect</span>
+          <span>Koble fra</span>
         </button>
       </div>
 
@@ -236,12 +236,12 @@
     <div class="modal-backdrop" id="settings-modal">
       <div class="modal-dialog">
         <div class="modal-header">
-          <h3>VPS & Network Settings</h3>
+          <h3>VPS & Nettverk</h3>
           <button class="btn-close" id="btn-close-settings">&times;</button>
         </div>
 
         <div class="input-group">
-          <label class="credential-label" for="setting-vps-domain">Signaling Server URL (VPS)</label>
+          <label class="credential-label" for="setting-vps-domain">Signaleringsserver (VPS)</label>
           <input 
             type="text" 
             id="setting-vps-domain" 
@@ -249,20 +249,20 @@
             value="wss://hjelp.penrose.no/ws" 
             placeholder="wss://hjelp.penrose.no/ws"
           />
-          <span style="font-size: 11px; color: var(--text-dim);">Enter your VPS signaling endpoint (wss:// or ws://).</span>
+          <span style="font-size: 11px; color: var(--text-muted);">Penrose sin offisielle VPS-megler.</span>
         </div>
 
         <div class="input-group">
-          <label class="credential-label" for="setting-stun-turn">Custom STUN/TURN Override (Optional)</label>
+          <label class="credential-label" for="setting-stun-turn">Tilpasset STUN/TURN (Valgfritt)</label>
           <input 
             type="text" 
             id="setting-stun-turn" 
             class="input-field" 
-            placeholder="Auto-detected from VPS"
+            placeholder="Hentes automatisk fra VPS"
           />
         </div>
 
-        <button class="btn-primary" id="btn-save-settings">Save and Reconnect</button>
+        <button class="btn-primary" id="btn-save-settings">Lagre og koble til</button>
       </div>
     </div>
   </div>
