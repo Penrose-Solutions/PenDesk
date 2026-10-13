@@ -90,6 +90,12 @@ const elSettingVpsDomain = document.getElementById('setting-vps-domain');
 const elPermissionBanner = document.getElementById('permission-banner');
 const elBtnRequestPerms = document.getElementById('btn-request-perms');
 
+const elIncomingModal = document.getElementById('incoming-modal');
+const elIncomingDesc = document.getElementById('incoming-caller-desc');
+const elBtnAcceptIncoming = document.getElementById('btn-accept-incoming');
+const elBtnRejectIncoming = document.getElementById('btn-reject-incoming');
+const elStreamPlaceholder = document.getElementById('stream-placeholder');
+
 async function invokeTauri(cmd, args = {}) {
   if (isTauri && window.__TAURI__.core) {
     return await window.__TAURI__.core.invoke(cmd, args);
@@ -117,28 +123,59 @@ const rtc = new WebRtcManager({
   },
 
   onIncomingCall: async ({ fromId, deviceName, accept, reject }) => {
-    const ok = confirm(`Innkommende forespørsel om fjernhjelp:\nOperatør: ${fromId} (${deviceName})\n\nVil du tillate tilkobling og dele skjermen din?`);
-    if (ok) {
-      let localStream = null;
-      try {
-        localStream = await navigator.mediaDevices.getDisplayMedia({
-          video: {
-            frameRate: { ideal: 60, max: 60 },
-            cursor: 'always'
-          },
-          audio: true
-        });
-      } catch (err) {
-        console.warn('Kunne ikke hente skjermopptak via nettleser-API:', err);
+    if (elIncomingModal && elBtnAcceptIncoming && elBtnRejectIncoming) {
+      if (elIncomingDesc) {
+        elIncomingDesc.textContent = `Operatør ${fromId} (${deviceName}) ber om å koble til og se skjermen din.`;
       }
-      await accept(localStream);
+      elIncomingModal.classList.add('active');
+
+      const handleAccept = async () => {
+        elIncomingModal.classList.remove('active');
+        cleanupModal();
+        let localStream = null;
+        try {
+          localStream = await navigator.mediaDevices.getDisplayMedia({
+            video: {
+              frameRate: { ideal: 60, max: 60 },
+              cursor: 'always'
+            },
+            audio: false
+          });
+        } catch (err) {
+          console.warn('Kunne ikke hente skjermopptak:', err);
+          alert('Kunne ikke hente skjermopptak: ' + err.message);
+        }
+        await accept(localStream);
+      };
+
+      const handleReject = () => {
+        elIncomingModal.classList.remove('active');
+        cleanupModal();
+        reject('Brukeren avslo tilkoblingsforespørselen');
+      };
+
+      const cleanupModal = () => {
+        elBtnAcceptIncoming.removeEventListener('click', handleAccept);
+        elBtnRejectIncoming.removeEventListener('click', handleReject);
+      };
+
+      elBtnAcceptIncoming.addEventListener('click', handleAccept);
+      elBtnRejectIncoming.addEventListener('click', handleReject);
     } else {
-      reject('Brukeren avslo tilkoblingsforespørselen');
+      const ok = confirm(`Innkommende forespørsel fra ${fromId}. Dele skjerm?`);
+      if (ok) {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        await accept(stream);
+      } else {
+        reject('Avslått');
+      }
     }
   },
 
   onRemoteTrack: (stream) => {
+    if (elStreamPlaceholder) elStreamPlaceholder.style.display = 'none';
     if (elRemoteVideo) {
+      elRemoteVideo.style.display = 'block';
       elRemoteVideo.srcObject = stream;
       elRemoteVideo.play().catch((e) => console.warn('Autoplay info:', e));
     }
@@ -222,9 +259,15 @@ function setupEventListeners() {
       elBtnConnect.style.opacity = '0.7';
 
       try {
+        if (elSessionOverlay) {
+          if (elStreamPlaceholder) elStreamPlaceholder.style.display = 'flex';
+          if (elRemoteVideo) elRemoteVideo.style.display = 'none';
+          elSessionOverlay.classList.add('active');
+        }
         await rtc.dial(targetId, pass);
         saveRecentConnection(targetId);
       } catch (err) {
+        if (elSessionOverlay) elSessionOverlay.classList.remove('active');
         alert('Kunne ikke opprette tilkobling: ' + err.message);
       } finally {
         elBtnConnectText.textContent = 'Koble til enhet';

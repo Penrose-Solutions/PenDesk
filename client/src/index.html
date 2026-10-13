@@ -227,8 +227,29 @@
       </div>
 
       <div class="canvas-container" id="stream-container">
-        <video id="remote-video" autoplay playsinline muted></video>
+        <div id="stream-placeholder" style="color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; gap: 14px;">
+          <div class="status-dot" style="background: var(--accent-blue); width: 14px; height: 14px;"></div>
+          <span style="font-size: 14px; font-weight: 500;">Tilkoblet! Venter på videostrøm fra partner...</span>
+        </div>
+        <video id="remote-video" autoplay playsinline muted style="display: none;"></video>
         <canvas id="remote-stream-canvas" style="display: none;"></canvas>
+      </div>
+    </div>
+
+    <!-- Incoming Call Modal (Triggered by user click to enable getDisplayMedia) -->
+    <div class="modal-backdrop" id="incoming-modal">
+      <div class="modal-dialog" style="text-align: center; gap: 18px;">
+        <div class="card-icon-wrap" style="margin: 0 auto; width: 48px; height: 48px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <h3 id="incoming-caller-title">Innkommende fjernhjelp</h3>
+        <p id="incoming-caller-desc" style="font-size: 14px; color: var(--text-secondary);">En partner ber om å koble til og se skjermen din.</p>
+        <div style="display: flex; gap: 12px; margin-top: 10px;">
+          <button class="btn-primary" id="btn-accept-incoming" style="flex: 1; padding: 13px;">Del skjerm og godkjenn</button>
+          <button class="toolbar-btn btn-danger" id="btn-reject-incoming" style="padding: 13px 20px;">Avslå</button>
+        </div>
       </div>
     </div>
 
@@ -267,6 +288,6 @@
     </div>
   </div>
 
-  <script type="module" src="app.js?v=2027_v5"></script>
+  <script type="module" src="app.js?v=2027_v6"></script>
 </body>
 </html>

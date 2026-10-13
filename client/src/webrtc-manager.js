@@ -231,6 +231,14 @@ export class WebRtcManager {
       this.onDataMessage(event.data);
     };
 
+    // Explicitly add recvonly transceivers so SDP offer allocates media lines
+    try {
+      this.peerConnection.addTransceiver('video', { direction: 'recvonly' });
+      this.peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+    } catch (e) {
+      console.warn('[WebRTC] addTransceiver warning:', e);
+    }
+
     // Create offer
     const offer = await this.peerConnection.createOffer({
       offerToReceiveVideo: true,
