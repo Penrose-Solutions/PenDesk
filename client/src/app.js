@@ -1,9 +1,49 @@
-import { WebRtcManager } from './webrtc-manager.js?v=2027_v4';
+import { WebRtcManager } from './webrtc-manager.js?v=2027_v5';
 
 // Check Tauri native environment
-const isTauri = typeof window.__TAURI__ !== 'undefined';
+const isTauri = typeof window !== 'undefined' && typeof window.__TAURI__ !== 'undefined';
 
-// Application State (In browser, use sessionStorage so two tabs have unique IDs for testing)
+// Use sessionStorage in browser so each tab has its own unique Desk ID for testing
+const storage = (typeof window !== 'undefined' && !isTauri && window.sessionStorage) 
+  ? window.sessionStorage 
+  : (typeof window !== 'undefined' && window.localStorage ? window.localStorage : { getItem: () => null, setItem: () => {} });
+
+// Helper Functions
+function generateRandomPasscode() {
+  const chars = '23456789abcdefghjkmnpqrstuvwxyz';
+  let res = '';
+  for (let i = 0; i < 6; i++) {
+    res += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return res;
+}
+
+function formatPartnerId(val) {
+  const digits = val.replace(/\D/g, '').slice(0, 9);
+  const parts = [];
+  if (digits.length > 0) parts.push(digits.slice(0, 3));
+  if (digits.length > 3) parts.push(digits.slice(3, 6));
+  if (digits.length > 6) parts.push(digits.slice(6, 9));
+  return parts.join(' ');
+}
+
+function resolveSignalingUrl() {
+  if (typeof window !== 'undefined' && window.location && window.location.protocol === 'https:') {
+    try {
+      const custom = localStorage.getItem('pendesk_signaling_url');
+      if (custom && custom.startsWith('wss://') && !custom.includes('localhost')) {
+        return custom;
+      }
+    } catch {}
+    return `wss://${window.location.host}/ws`;
+  }
+  try {
+    return localStorage.getItem('pendesk_signaling_url') || 'wss://hjelp.penrose.no/ws';
+  } catch {
+    return 'wss://hjelp.penrose.no/ws';
+  }
+}
+
 // Clean up any stale localhost URL from previous visits
 try {
   const storedUrl = localStorage.getItem('pendesk_signaling_url');
@@ -12,22 +52,12 @@ try {
   }
 } catch {}
 
-function resolveSignalingUrl() {
-  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
-    const custom = localStorage.getItem('pendesk_signaling_url');
-    if (custom && custom.startsWith('wss://') && !custom.includes('localhost')) {
-      return custom;
-    }
-    return `wss://${window.location.host}/ws`;
-  }
-  return localStorage.getItem('pendesk_signaling_url') || 'wss://hjelp.penrose.no/ws';
-}
-
+// Application State
 const state = {
   localId: storage.getItem('pendesk_device_id') || '',
   localPasscode: generateRandomPasscode(),
   signalingUrl: resolveSignalingUrl(),
-  recentConnections: JSON.parse(localStorage.getItem('pendesk_recent') || '[]'),
+  recentConnections: JSON.parse((typeof localStorage !== 'undefined' && localStorage.getItem('pendesk_recent')) || '[]'),
   inSession: false
 };
 
@@ -60,28 +90,6 @@ const elSettingVpsDomain = document.getElementById('setting-vps-domain');
 const elPermissionBanner = document.getElementById('permission-banner');
 const elBtnRequestPerms = document.getElementById('btn-request-perms');
 
-// Helper Functions
-function generateRandomPasscode() {
-  const chars = '23456789abcdefghjkmnpqrstuvwxyz';
-  let res = '';
-  for (let i = 0; i < 6; i++) {
-    res += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return res;
-}
-
-function formatPartnerId(val) {
-  const digits = val.replace(/\D/g, '').slice(0, 9);
-  const parts = [];
-  if (digits.length > 0) parts.push(digits.slice(0, 3));
-  if (digits.length > 3) parts.push(digits.slice(3, 6));
-  if (digits.length > 6) parts.push(digits.slice(6, 9));
-  return parts.join(' ');
-}
-
-// Check Tauri native environment
-const isTauri = typeof window.__TAURI__ !== 'undefined';
-
 async function invokeTauri(cmd, args = {}) {
   if (isTauri && window.__TAURI__.core) {
     return await window.__TAURI__.core.invoke(cmd, args);
@@ -94,18 +102,18 @@ const rtc = new WebRtcManager({
   signalingUrl: state.signalingUrl,
   clientId: state.localId,
   password: state.localPasscode,
-  deviceName: 'PenDesk Desktop',
+  deviceName: isTauri ? 'PenDesk Mac Desktop' : 'PenDesk Web Klient',
 
   onStatusChange: (status, message) => {
-    elStatusPill.className = 'status-pill ' + (status === 'ready' ? '' : status);
-    elStatusText.textContent = message;
-    elVpsLabel.textContent = `VPS Signaling: ${state.signalingUrl}`;
+    if (elStatusPill) elStatusPill.className = 'status-pill ' + (status === 'ready' ? '' : status);
+    if (elStatusText) elStatusText.textContent = message;
+    if (elVpsLabel) elVpsLabel.textContent = `VPS: ${state.signalingUrl}`;
   },
 
   onRegistered: (assignedId) => {
     state.localId = assignedId;
     storage.setItem('pendesk_device_id', assignedId);
-    elLocalId.textContent = assignedId;
+    if (elLocalId) elLocalId.textContent = assignedId;
   },
 
   onIncomingCall: async ({ fromId, deviceName, accept, reject }) => {
@@ -113,7 +121,6 @@ const rtc = new WebRtcManager({
     if (ok) {
       let localStream = null;
       try {
-        // Capture screen via ScreenCaptureKit / standard getDisplayMedia
         localStream = await navigator.mediaDevices.getDisplayMedia({
           video: {
             frameRate: { ideal: 60, max: 60 },
@@ -131,16 +138,17 @@ const rtc = new WebRtcManager({
   },
 
   onRemoteTrack: (stream) => {
-    elRemoteVideo.srcObject = stream;
-    elRemoteVideo.play().catch((e) => console.warn('Autoplay info:', e));
-    elSessionOverlay.classList.add('active');
+    if (elRemoteVideo) {
+      elRemoteVideo.srcObject = stream;
+      elRemoteVideo.play().catch((e) => console.warn('Autoplay info:', e));
+    }
+    if (elSessionOverlay) elSessionOverlay.classList.add('active');
     state.inSession = true;
   },
 
   onDataMessage: async (rawData) => {
     try {
       const event = JSON.parse(rawData);
-      // Dispatch input event to Tauri's native OS injection module!
       if (isTauri) {
         await invokeTauri('inject_input', { event });
       }
@@ -150,129 +158,143 @@ const rtc = new WebRtcManager({
   },
 
   onTelemetryUpdate: ({ rtt, fps, transport }) => {
-    if (rtt !== null) elStatLatency.textContent = `${rtt} ms`;
-    elStatFps.textContent = `${fps} FPS`;
+    if (rtt !== null && elStatLatency) elStatLatency.textContent = `${rtt} ms`;
+    if (elStatFps) elStatFps.textContent = `${fps} FPS`;
   },
 
   onSessionEnded: (reason) => {
-    elSessionOverlay.classList.remove('active');
+    if (elSessionOverlay) elSessionOverlay.classList.remove('active');
     state.inSession = false;
-    elRemoteVideo.srcObject = null;
-    alert(reason || 'Session ended');
+    if (elRemoteVideo) elRemoteVideo.srcObject = null;
+    alert(reason || 'Økten ble avsluttet.');
   }
 });
 
 // Setup UI Event Handlers
 function setupEventListeners() {
-  // Render credentials
-  elLocalId.textContent = state.localId || 'Allocating...';
-  elLocalPass.textContent = state.localPasscode;
-  elSettingVpsDomain.value = state.signalingUrl;
+  if (elLocalId) elLocalId.textContent = state.localId || '--- --- ---';
+  if (elLocalPass) elLocalPass.textContent = state.localPasscode;
+  if (elSettingVpsDomain) elSettingVpsDomain.value = state.signalingUrl;
 
-  // Copy ID
-  document.getElementById('btn-copy-id').addEventListener('click', () => {
-    navigator.clipboard.writeText(state.localId.replace(/\s/g, ''));
-    flashButton(document.getElementById('btn-copy-id'));
-  });
-
-  // Copy Password
-  document.getElementById('btn-copy-pass').addEventListener('click', () => {
-    navigator.clipboard.writeText(state.localPasscode);
-    flashButton(document.getElementById('btn-copy-pass'));
-  });
-
-  // Regenerate Password
-  document.getElementById('btn-refresh-pass').addEventListener('click', () => {
-    state.localPasscode = generateRandomPasscode();
-    elLocalPass.textContent = state.localPasscode;
-    rtc.updateCredentials(state.localPasscode);
-    flashButton(document.getElementById('btn-refresh-pass'));
-  });
-
-  // Partner ID formatting
-  elRemoteIdInput.addEventListener('input', (e) => {
-    e.target.value = formatPartnerId(e.target.value);
-  });
-
-  // Connect Button
-  elBtnConnect.addEventListener('click', async () => {
-    const targetId = elRemoteIdInput.value.trim();
-    const pass = elRemotePassInput.value.trim();
-
-    if (targetId.length < 9) {
-      alert('Please enter a valid 9-digit partner ID');
-      return;
-    }
-
-    elBtnConnectText.textContent = 'Connecting...';
-    elBtnConnect.style.opacity = '0.7';
-
-    try {
-      await rtc.dial(targetId, pass);
-      saveRecentConnection(targetId);
-    } catch (err) {
-      alert('Failed to initiate connection: ' + err.message);
-    } finally {
-      elBtnConnectText.textContent = 'Connect to Partner';
-      elBtnConnect.style.opacity = '1';
-    }
-  });
-
-  // Disconnect Button
-  elBtnDisconnect.addEventListener('click', () => {
-    rtc.disconnectSession();
-  });
-
-  // Fullscreen Button
-  elBtnFullscreen.addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-      elSessionOverlay.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
-  });
-
-  // Settings Modal
-  elBtnOpenSettings.addEventListener('click', () => {
-    elSettingsModal.classList.add('active');
-  });
-
-  elBtnCloseSettings.addEventListener('click', () => {
-    elSettingsModal.classList.remove('active');
-  });
-
-  elBtnSaveSettings.addEventListener('click', () => {
-    const newUrl = elSettingVpsDomain.value.trim();
-    if (newUrl) {
-      state.signalingUrl = newUrl;
-      localStorage.setItem('pendesk_signaling_url', newUrl);
-      rtc.signalingUrl = newUrl;
-      rtc.connectSignaling();
-    }
-    elSettingsModal.classList.remove('active');
-  });
-
-  // Permissions Check (macOS)
-  if (isTauri) {
-    invokeTauri('check_permissions').then((perms) => {
-      if (perms && (!perms.screen_recording || !perms.accessibility)) {
-        elPermissionBanner.style.display = 'flex';
-      }
-    });
-
-    elBtnRequestPerms.addEventListener('click', () => {
-      invokeTauri('open_permission_settings');
+  const btnCopyId = document.getElementById('btn-copy-id');
+  if (btnCopyId) {
+    btnCopyId.addEventListener('click', () => {
+      navigator.clipboard.writeText(state.localId.replace(/\s/g, ''));
+      flashButton(btnCopyId);
     });
   }
 
-  // Setup Remote Input Listeners (Viewport)
+  const btnCopyPass = document.getElementById('btn-copy-pass');
+  if (btnCopyPass) {
+    btnCopyPass.addEventListener('click', () => {
+      navigator.clipboard.writeText(state.localPasscode);
+      flashButton(btnCopyPass);
+    });
+  }
+
+  const btnRefreshPass = document.getElementById('btn-refresh-pass');
+  if (btnRefreshPass) {
+    btnRefreshPass.addEventListener('click', () => {
+      state.localPasscode = generateRandomPasscode();
+      if (elLocalPass) elLocalPass.textContent = state.localPasscode;
+      rtc.updateCredentials(state.localPasscode);
+      flashButton(btnRefreshPass);
+    });
+  }
+
+  if (elRemoteIdInput) {
+    elRemoteIdInput.addEventListener('input', (e) => {
+      e.target.value = formatPartnerId(e.target.value);
+    });
+  }
+
+  if (elBtnConnect) {
+    elBtnConnect.addEventListener('click', async () => {
+      const targetId = elRemoteIdInput.value.trim();
+      const pass = elRemotePassInput.value.trim();
+
+      if (targetId.length < 9) {
+        alert('Vennligst oppgi en gyldig 9-sifret partner-ID');
+        return;
+      }
+
+      elBtnConnectText.textContent = 'Kobler til...';
+      elBtnConnect.style.opacity = '0.7';
+
+      try {
+        await rtc.dial(targetId, pass);
+        saveRecentConnection(targetId);
+      } catch (err) {
+        alert('Kunne ikke opprette tilkobling: ' + err.message);
+      } finally {
+        elBtnConnectText.textContent = 'Koble til enhet';
+        elBtnConnect.style.opacity = '1';
+      }
+    });
+  }
+
+  if (elBtnDisconnect) {
+    elBtnDisconnect.addEventListener('click', () => {
+      rtc.disconnectSession();
+    });
+  }
+
+  if (elBtnFullscreen) {
+    elBtnFullscreen.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        elSessionOverlay.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+  }
+
+  if (elBtnOpenSettings) {
+    elBtnOpenSettings.addEventListener('click', () => {
+      elSettingsModal.classList.add('active');
+    });
+  }
+
+  if (elBtnCloseSettings) {
+    elBtnCloseSettings.addEventListener('click', () => {
+      elSettingsModal.classList.remove('active');
+    });
+  }
+
+  if (elBtnSaveSettings) {
+    elBtnSaveSettings.addEventListener('click', () => {
+      const newUrl = elSettingVpsDomain.value.trim();
+      if (newUrl) {
+        state.signalingUrl = newUrl;
+        localStorage.setItem('pendesk_signaling_url', newUrl);
+        rtc.signalingUrl = newUrl;
+        rtc.connectSignaling();
+      }
+      elSettingsModal.classList.remove('active');
+    });
+  }
+
+  if (isTauri) {
+    invokeTauri('check_permissions').then((perms) => {
+      if (perms && (!perms.screen_recording || !perms.accessibility)) {
+        if (elPermissionBanner) elPermissionBanner.style.display = 'flex';
+      }
+    });
+
+    if (elBtnRequestPerms) {
+      elBtnRequestPerms.addEventListener('click', () => {
+        invokeTauri('open_permission_settings');
+      });
+    }
+  }
+
   setupInputForwarding();
   renderRecentConnections();
 }
 
-// Forward mouse & keyboard events to Host
 function setupInputForwarding() {
   const container = document.getElementById('stream-container');
+  if (!container) return;
 
   function getNormalizedCoords(e) {
     const rect = elRemoteVideo.getBoundingClientRect();
@@ -318,7 +340,7 @@ function setupInputForwarding() {
 
 function flashButton(btn) {
   const orig = btn.style.borderColor;
-  btn.style.borderColor = 'var(--accent-cyan)';
+  btn.style.borderColor = 'var(--accent-blue)';
   setTimeout(() => { btn.style.borderColor = orig; }, 300);
 }
 
@@ -326,19 +348,22 @@ function saveRecentConnection(id) {
   if (!state.recentConnections.includes(id)) {
     state.recentConnections.unshift(id);
     if (state.recentConnections.length > 5) state.recentConnections.pop();
-    localStorage.setItem('pendesk_recent', JSON.stringify(state.recentConnections));
+    try {
+      localStorage.setItem('pendesk_recent', JSON.stringify(state.recentConnections));
+    } catch {}
     renderRecentConnections();
   }
 }
 
 function renderRecentConnections() {
+  if (!elRecentChips) return;
   if (state.recentConnections.length === 0) {
-    elRecentChips.innerHTML = '<span style="font-size: 12px; color: var(--text-dim);">No recent sessions yet. Connected partner desks will appear here.</span>';
-    elRecentCount.textContent = '0 saved';
+    elRecentChips.innerHTML = '<span style="font-size: 12px; color: var(--text-muted);">Ingen nylige økter ennå. Enheter du har koblet til vises her.</span>';
+    if (elRecentCount) elRecentCount.textContent = '0 lagret';
     return;
   }
 
-  elRecentCount.textContent = `${state.recentConnections.length} saved`;
+  if (elRecentCount) elRecentCount.textContent = `${state.recentConnections.length} lagret`;
   elRecentChips.innerHTML = '';
   state.recentConnections.forEach((id) => {
     const chip = document.createElement('div');
@@ -358,7 +383,12 @@ function renderRecentConnections() {
 }
 
 // Bootstrap
-window.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    setupEventListeners();
+    rtc.connectSignaling();
+  });
+} else {
   setupEventListeners();
   rtc.connectSignaling();
-});
+}
