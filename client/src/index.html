@@ -10,9 +10,262 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=2027_v15" />
+  <link rel="stylesheet" href="style.css?v=2027_v16" />
 </head>
 <body>
+  <!-- Gateway Portal / Launcher (Choose Web UI vs Download Apps) -->
+  <div id="gateway-portal" class="gateway-portal">
+    <!-- Ambient Aurora Background Elements -->
+    <div class="portal-ambient-blob portal-blob-1"></div>
+    <div class="portal-ambient-blob portal-blob-2"></div>
+    <div class="portal-ambient-grid"></div>
+
+    <div class="portal-container">
+      <!-- Top Bar of Portal -->
+      <header class="portal-topbar">
+        <div class="portal-brand">
+          <img src="assets/penrose-symbol-white.png" alt="Penrose Solutions" class="portal-logo-img" />
+          <div class="portal-brand-text">
+            <span class="portal-brand-name">Penrose Fjernhjelp</span>
+            <span class="portal-brand-version">v1.0.0</span>
+          </div>
+        </div>
+
+        <div class="portal-topbar-right">
+          <div class="status-pill ready portal-status-pill" title="Ende-til-ende-kryptert: TLS 1.3 signalering, DTLS-SRTP AES-256">
+            <span class="status-dot"></span>
+            <svg class="status-lock-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>Sikker tilkobling (DTLS-SRTP AES-256)</span>
+          </div>
+          <button class="btn-portal-ghost" id="btn-portal-skip-top" title="Hopp rett til Web-klient">
+            <span>Til Web-klient</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Hero Header -->
+      <div class="portal-hero">
+        <div class="portal-hero-badge">
+          <span class="portal-badge-dot"></span>
+          <span>SIKKER FJERNSTYRING &amp; IT-SUPPORT</span>
+        </div>
+        <h1 class="portal-hero-title">Velg hvordan du vil bruke PenDesk</h1>
+        <p class="portal-hero-subtitle">
+          Kjør umiddelbart direkte i nettleseren uten installasjon, eller last ned vår lynraske skrivebordsapp for 60 FPS maskinvareytelse og uovervåket servertilgang.
+        </p>
+      </div>
+
+      <!-- Dual Choice Cards Grid -->
+      <div class="portal-cards-grid">
+        <!-- CARD 1: WEB UI -->
+        <div class="portal-card portal-card-web">
+          <div class="portal-card-header">
+            <div class="portal-card-badge badge-web">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+              <span>INGEN INSTALLASJON</span>
+            </div>
+            <div class="portal-card-icon-wrap icon-web">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+                <circle cx="6" cy="7" r="1" fill="currentColor"></circle>
+                <circle cx="9" cy="7" r="1" fill="currentColor"></circle>
+                <circle cx="12" cy="7" r="1" fill="currentColor"></circle>
+              </svg>
+            </div>
+          </div>
+
+          <div class="portal-card-body">
+            <h2 class="portal-card-title">PenDesk Web-klient</h2>
+            <p class="portal-card-desc">
+              Start umiddelbart i nettleseren. Perfekt for rask fjernhjelp, engangssupport eller maskiner der du ikke har tillatelse til å installere programvare.
+            </p>
+
+            <ul class="portal-features-list">
+              <li>
+                <div class="feat-check">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div>
+                  <strong>Klar på 2 sekunder</strong>
+                  <span>Ingen nedlasting eller installasjonsfiler kreves.</span>
+                </div>
+              </li>
+              <li>
+                <div class="feat-check">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div>
+                  <strong>DTLS-SRTP 256-bit kryptering</strong>
+                  <span>Sikker WebRTC direkteforbindelse (P2P).</span>
+                </div>
+              </li>
+              <li>
+                <div class="feat-check">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div>
+                  <strong>Støtter alle nettlesere</strong>
+                  <span>Fungerer i Chrome, Safari, Edge, Firefox og Opera.</span>
+                </div>
+              </li>
+              <li>
+                <div class="feat-check">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div>
+                  <strong>Chat &amp; utklippstavle</strong>
+                  <span>Full toveiskommunikasjon og fildeling under økten.</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="portal-card-footer">
+            <button class="btn-portal-action btn-portal-primary" id="btn-portal-launch-web">
+              <span>Start Web-klient</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14"></path>
+                <path d="M12 5l7 7-7 7"></path>
+              </svg>
+            </button>
+            <span class="portal-card-subtext">Kjører direkte i denne fanen</span>
+          </div>
+        </div>
+
+        <!-- CARD 2: NATIVE DESKTOP APPS -->
+        <div class="portal-card portal-card-desktop">
+          <div class="portal-card-header">
+            <div class="portal-card-badge badge-desktop">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+              <span>BEST YTELSE &amp; UOVERVÅKET</span>
+            </div>
+            <div class="portal-card-icon-wrap icon-desktop">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="2" width="20" height="8" rx="2"></rect>
+                <rect x="2" y="14" width="20" height="8" rx="2"></rect>
+                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+              </svg>
+            </div>
+          </div>
+
+          <div class="portal-card-body">
+            <h2 class="portal-card-title">PenDesk Skrivebordsapp</h2>
+            <p class="portal-card-desc">
+              Vår kraftigste løsning. For IT-teknikere, serverdrift og deg som ønsker permanent uovervåket tilgang til kontormaskinen eller servere med fast passord.
+            </p>
+
+            <ul class="portal-features-list">
+              <li>
+                <div class="feat-check feat-check-blue">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div>
+                  <strong>60 FPS maskinvareakselerasjon</strong>
+                  <span>DXGI &amp; ScreenCaptureKit med minimal forsinkelse (&lt;25ms).</span>
+                </div>
+              </li>
+              <li>
+                <div class="feat-check feat-check-blue">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div>
+                  <strong>Fast passord (Uovervåket tilgang)</strong>
+                  <span>Koble til maskiner når som helst uten at noen må trykke godkjenn.</span>
+                </div>
+              </li>
+              <li>
+                <div class="feat-check feat-check-blue">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div>
+                  <strong>Flere skjermer &amp; systemtaster</strong>
+                  <span>Sømløs veksling mellom skjermer og Ctrl+Alt+Del støtte.</span>
+                </div>
+              </li>
+              <li>
+                <div class="feat-check feat-check-blue">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div>
+                  <strong>Innebygde auto-oppdateringer</strong>
+                  <span>Alltid oppdatert automatisk over-the-air uten reinstallasjon.</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="portal-card-footer">
+            <!-- Smart Detected OS Main Download Button -->
+            <a href="/downloads/Penrose-Fjernhjelp-Windows.exe" class="btn-portal-action btn-portal-download" id="btn-portal-smart-dl" download>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="portal-smart-icon">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <div class="btn-dl-text">
+                <span class="btn-dl-main" id="btn-portal-dl-label">Last ned for Windows</span>
+                <span class="btn-dl-meta" id="btn-portal-dl-meta">64-bit .exe · v1.0.0 (25 MB)</span>
+              </div>
+            </a>
+
+            <!-- Quick Platform Switcher Pills -->
+            <div class="portal-platform-pills">
+              <span class="pills-title">Andre plattformer:</span>
+              <div class="pills-row">
+                <a href="/downloads/Penrose-Fjernhjelp-Windows.exe" class="platform-chip" id="chip-win" download title="Last ned Windows 64-bit installasjon">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4h-13.051M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.8z"/></svg>
+                  <span>Windows (.exe)</span>
+                </a>
+                <a href="/downloads/Penrose-Fjernhjelp-macOS-AppleSilicon.dmg" class="platform-chip" id="chip-mac-arm" download title="Last ned for Mac med Apple Silicon (M1/M2/M3/M4)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 0.92-2.85-.9.04-2 .6-2.65 1.35-.58.67-.99 1.74-.86 2.76 1.02.08 2.06-.51 2.59-1.26z"/></svg>
+                  <span>Mac Apple Silicon (.dmg)</span>
+                </a>
+                <a href="/downloads/Penrose-Fjernhjelp-macOS-Intel.dmg" class="platform-chip" id="chip-mac-intel" download title="Last ned for Mac med Intel prosessor">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.61-.75 1.04-1.8 0.92-2.85-.9.04-2 .6-2.65 1.35-.58.67-.99 1.74-.86 2.76 1.02.08 2.06-.51 2.59-1.26z"/></svg>
+                  <span>Mac Intel (.dmg)</span>
+                </a>
+                <button type="button" class="platform-chip" id="chip-linux" title="Linux instruksjoner">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                  <span>Linux (Web / AppImage)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portal Bottom Bar -->
+      <footer class="portal-footer">
+        <label class="portal-remember-checkbox">
+          <input type="checkbox" id="chk-remember-portal-choice" />
+          <span>Husk valget mitt og åpne alltid Web-klienten direkte</span>
+        </label>
+        <div class="portal-footer-links">
+          <span>Driftes i Norge</span>
+          <span class="portal-dot-sep">•</span>
+          <span>Ende-til-ende kryptert (TLS 1.3 / AES-256)</span>
+          <span class="portal-dot-sep">•</span>
+          <a href="https://penrose.no" target="_blank" rel="noopener">Penrose Solutions</a>
+        </div>
+      </footer>
+    </div>
+  </div>
+
   <div id="app">
     <!-- Sidebar -->
     <aside class="sidebar">
@@ -44,6 +297,14 @@
             <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
         </button>
+
+        <button class="nav-item" id="nav-downloads" title="Last ned app (Windows, Mac, Linux)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </button>
       </nav>
 
       <div class="nav-footer">
@@ -66,6 +327,16 @@
         </div>
 
         <div class="header-right-group">
+          <!-- Download Native App Pill Button -->
+          <button class="btn-header-download" id="btn-header-download" title="Last ned PenDesk for Mac, Windows eller Linux">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Last ned app</span>
+          </button>
+
           <!-- Auth / Profile Pill Button -->
           <button class="btn-auth-user" id="btn-auth-user" title="Min Penrose-konto">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -696,6 +967,6 @@
     <div class="toast-container" id="toast-container"></div>
   </div>
 
-  <script type="module" src="app.js?v=2027_v15"></script>
+  <script type="module" src="app.js?v=2027_v16"></script>
 </body>
 </html>

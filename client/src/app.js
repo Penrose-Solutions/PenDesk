@@ -1701,11 +1701,144 @@ function setupUpdaterListeners() {
   }
 }
 
+// ============================================================================
+// GATEWAY PORTAL / LAUNCHER (Web UI vs Native Desktop Downloads)
+// ============================================================================
+function detectVisitorOS() {
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+
+  const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/.test(platform) || /Mac OS X/.test(ua);
+  const isWin = /Win32|Win64|Windows|WinCE/.test(platform) || /Windows/.test(ua);
+  const isLinux = /Linux/.test(platform) || /Linux/.test(ua);
+
+  let osType = 'windows';
+  let osName = 'Windows';
+  let dlUrl = '/downloads/Penrose-Fjernhjelp-Windows.exe';
+  let meta = '64-bit .exe · v1.0.0 (25 MB)';
+
+  if (isMac) {
+    let isAppleSilicon = true;
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (gl) {
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : '';
+        if (/Intel/i.test(renderer)) {
+          isAppleSilicon = false;
+        }
+      }
+    } catch {}
+
+    if (isAppleSilicon) {
+      osType = 'mac-arm';
+      osName = 'macOS (Apple Silicon)';
+      dlUrl = '/downloads/Penrose-Fjernhjelp-macOS-AppleSilicon.dmg';
+      meta = 'Apple Silicon .dmg · v1.0.0 (29 MB)';
+    } else {
+      osType = 'mac-intel';
+      osName = 'macOS (Intel)';
+      dlUrl = '/downloads/Penrose-Fjernhjelp-macOS-Intel.dmg';
+      meta = 'Intel .dmg · v1.0.0 (36 MB)';
+    }
+  } else if (isWin) {
+    osType = 'windows';
+    osName = 'Windows';
+    dlUrl = '/downloads/Penrose-Fjernhjelp-Windows.exe';
+    meta = '64-bit .exe · v1.0.0 (25 MB)';
+  } else if (isLinux) {
+    osType = 'linux';
+    osName = 'Linux';
+    dlUrl = '#linux';
+    meta = 'Web-klient / Kildekode · v1.0.0';
+  }
+
+  return { osType, osName, dlUrl, meta };
+}
+
+function setupPortalLauncher() {
+  const elPortal = document.getElementById('gateway-portal');
+  const elBtnLaunchWeb = document.getElementById('btn-portal-launch-web');
+  const elBtnSkipTop = document.getElementById('btn-portal-skip-top');
+  const elBtnSmartDl = document.getElementById('btn-portal-smart-dl');
+  const elDlLabel = document.getElementById('btn-portal-dl-label');
+  const elDlMeta = document.getElementById('btn-portal-dl-meta');
+  const elChkRemember = document.getElementById('chk-remember-portal-choice');
+  const elBtnHeaderDownload = document.getElementById('btn-header-download');
+  const elNavDownloads = document.getElementById('nav-downloads');
+  const elChipLinux = document.getElementById('chip-linux');
+
+  if (!elPortal) return;
+
+  const detected = detectVisitorOS();
+  if (elDlLabel) elDlLabel.textContent = `Last ned for ${detected.osName}`;
+  if (elDlMeta) elDlMeta.textContent = detected.meta;
+  if (elBtnSmartDl) {
+    elBtnSmartDl.href = detected.dlUrl;
+    if (detected.osType === 'linux') {
+      elBtnSmartDl.removeAttribute('download');
+      elBtnSmartDl.addEventListener('click', (e) => {
+        e.preventDefault();
+        alert('PenDesk for Linux: Web-klienten støttes i alle moderne Linux-nettlesere. Du kan også kompilere desktop-binæren fra PenDesk GitHub-repoet.');
+      });
+    }
+  }
+
+  if (elChipLinux) {
+    elChipLinux.addEventListener('click', (e) => {
+      e.preventDefault();
+      alert('PenDesk for Linux: Web-klienten støttes i alle moderne Linux-nettlesere med full WebRTC.');
+    });
+  }
+
+  function openWebWorkspace() {
+    if (elChkRemember && elChkRemember.checked) {
+      storage.setItem('pendesk_bypass_gateway', 'true');
+    }
+    elPortal.classList.add('portal-hidden');
+  }
+
+  function showPortal() {
+    elPortal.classList.remove('portal-hidden');
+    if (elBtnSkipTop) {
+      elBtnSkipTop.innerHTML = `<span>Tilbake til app</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>`;
+    }
+  }
+
+  if (elBtnLaunchWeb) {
+    elBtnLaunchWeb.addEventListener('click', openWebWorkspace);
+  }
+
+  if (elBtnSkipTop) {
+    elBtnSkipTop.addEventListener('click', openWebWorkspace);
+  }
+
+  if (elBtnHeaderDownload) {
+    elBtnHeaderDownload.addEventListener('click', showPortal);
+  }
+
+  if (elNavDownloads) {
+    elNavDownloads.addEventListener('click', showPortal);
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const forceWeb = urlParams.get('mode') === 'web' || urlParams.get('direct') === '1' || window.location.hash === '#app';
+  const hasRemembered = storage.getItem('pendesk_bypass_gateway') === 'true';
+
+  if (forceWeb || hasRemembered) {
+    elPortal.classList.add('portal-hidden');
+  } else {
+    elPortal.classList.remove('portal-hidden');
+  }
+}
+
 // Bootstrap
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     setupUpdaterListeners();
+    setupPortalLauncher();
     loadCurrentUser();
     rtc.connectSignaling();
     setTimeout(() => checkForAppUpdates(false), 3000);
@@ -1713,8 +1846,10 @@ if (document.readyState === 'loading') {
 } else {
   setupEventListeners();
   setupUpdaterListeners();
+  setupPortalLauncher();
   loadCurrentUser();
   rtc.connectSignaling();
   setTimeout(() => checkForAppUpdates(false), 3000);
 }
+
 
