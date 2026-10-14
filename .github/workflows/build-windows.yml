@@ -1,0 +1,41 @@
+name: Build Windows App (PenDesk)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './client/src-tauri -> target'
+
+      - name: Build Tauri Windows Executable
+        run: |
+          cd client/src-tauri
+          cargo build --release
+
+      - name: Rename binary
+        run: |
+          Copy-Item "client/src-tauri/target/release/pendesk.exe" -Destination "Penrose-Fjernhjelp-Windows.exe"
+
+      - name: Upload Windows Executable Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Penrose-Fjernhjelp-Windows
+          path: Penrose-Fjernhjelp-Windows.exe

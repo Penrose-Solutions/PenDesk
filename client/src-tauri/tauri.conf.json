@@ -11,6 +11,7 @@
     "windows": [
       {
         "title": "PenDesk Remote Desktop",
+        "url": "index.html?app=desktop",
         "width": 1050,
         "height": 720,
         "minWidth": 880,

@@ -36,6 +36,7 @@ export class WebRtcManager {
     this.onFileTransferProgress = options.onFileTransferProgress || (() => {});
     this.onFileTransferComplete = options.onFileTransferComplete || (() => {});
     this.onReliableStateChange = options.onReliableStateChange || (() => {});
+    this.onSessionStarted = options.onSessionStarted || (() => {});
 
     this.telemetryInterval = null;
   }
@@ -161,6 +162,15 @@ export class WebRtcManager {
           await this._drainIceCandidates();
           this.onStatusChange('in_session', `Sikker økt med ${msg.targetId} (AES-256)`);
           this._startTelemetryLoop();
+          try {
+            this.onSessionStarted({
+              partnerId: msg.targetId,
+              deviceName: msg.remoteDeviceName || 'PenDesk Klient',
+              isDesktop: Boolean(msg.isDesktop)
+            });
+          } catch (e) {
+            console.warn('[WebRTC] onSessionStarted callback error:', e);
+          }
         }
         break;
       }

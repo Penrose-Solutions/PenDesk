@@ -511,13 +511,17 @@ wss.on('connection', (ws) => {
             const currentHost = peers.get(currentClientId);
             if (currentHost) currentHost.activePartnerId = targetId;
           }
+          const currentHost = peers.get(currentClientId);
+          const isDesktop = currentHost ? (currentHost.deviceName.includes('Desktop') || currentHost.platform === 'desktop') : false;
           caller.ws.send(
             JSON.stringify({
               type: 'dial_response',
               targetId: currentClientId,
               success: msg.accepted,
               sdpAnswer: msg.sdpAnswer,
-              reason: msg.reason || null
+              reason: msg.reason || null,
+              remoteDeviceName: currentHost ? currentHost.deviceName : 'PenDesk Web Klient',
+              isDesktop
             })
           );
         }

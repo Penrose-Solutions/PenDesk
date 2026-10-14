@@ -59,7 +59,11 @@ cat << 'EOF' > "$CONTENTS/Info.plist"
 </dict>
 </plist>
 EOF
+# 3.5. Code sign the application bundle
+echo "Code signing PenDesk.app..."
+codesign --force --deep -s - "$APP_DIR"
 
+codesign --verify --deep --strict --verbose=2 "$APP_DIR"
 # 4. Create DMG staging folder with Applications shortcut
 STAGING="$DIR/dist/dmg-staging"
 rm -rf "$STAGING"
@@ -67,12 +71,21 @@ mkdir -p "$STAGING"
 cp -r "$APP_DIR" "$STAGING/"
 ln -s /Applications "$STAGING/Applications"
 
+if [ -f "$RESOURCES/icon.icns" ]; then
+  cp "$RESOURCES/icon.icns" "$STAGING/.VolumeIcon.icns"
+  SetFile -a C "$STAGING" 2>/dev/null || true
+fi
+
 DMG_OUT="$DIR/dist/Penrose-Fjernhjelp-macOS-AppleSilicon.dmg"
 rm -f "$DMG_OUT"
 
 echo "Creating compressed DMG with hdiutil..."
 hdiutil create -volname "PenDesk" -srcfolder "$STAGING" -ov -format UDZO "$DMG_OUT"
 rm -rf "$STAGING"
+
+echo "Code signing DMG disk image..."
+codesign --force -s - "$DMG_OUT" 2>/dev/null || true
+
 
 echo "=========================================="
 echo " Successfully created PenDesk DMG:"

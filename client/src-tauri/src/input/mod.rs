@@ -1,4 +1,7 @@
+#[cfg(target_os = "macos")]
 pub mod macos;
+
+#[cfg(target_os = "windows")]
 pub mod windows;
 
 use serde::Deserialize;
@@ -84,7 +87,7 @@ pub fn handle_remote_input(event: InputEvent) {
     }
 }
 
-// Maps standard key names to virtual keycodes (macOS ANSI layout mapping)
+#[cfg(target_os = "macos")]
 fn map_key_to_code(key: &str) -> u16 {
     match key.to_lowercase().as_str() {
         "a" => 0x00,
@@ -144,4 +147,38 @@ fn map_key_to_code(key: &str) -> u16 {
         "control" => 0x3B,
         _ => 0x31,
     }
+}
+
+#[cfg(target_os = "windows")]
+fn map_key_to_code(key: &str) -> u16 {
+    match key.to_lowercase().as_str() {
+        "a" => 0x41, "b" => 0x42, "c" => 0x43, "d" => 0x44, "e" => 0x45,
+        "f" => 0x46, "g" => 0x47, "h" => 0x48, "i" => 0x49, "j" => 0x4A,
+        "k" => 0x4B, "l" => 0x4C, "m" => 0x4D, "n" => 0x4E, "o" => 0x4F,
+        "p" => 0x50, "q" => 0x51, "r" => 0x52, "s" => 0x53, "t" => 0x54,
+        "u" => 0x55, "v" => 0x56, "w" => 0x57, "x" => 0x58, "y" => 0x59, "z" => 0x5A,
+        "0" => 0x30, "1" => 0x31, "2" => 0x32, "3" => 0x33, "4" => 0x34,
+        "5" => 0x35, "6" => 0x36, "7" => 0x37, "8" => 0x38, "9" => 0x39,
+        "enter" | "return" => 0x0D,
+        "escape" => 0x1B,
+        "backspace" => 0x08,
+        "tab" => 0x09,
+        " " | "space" => 0x20,
+        "shift" => 0x10,
+        "control" => 0x11,
+        "alt" | "option" => 0x12,
+        "meta" | "command" => 0x5B, // VK_LWIN
+        "capslock" => 0x14,
+        "arrowleft" => 0x25,
+        "arrowup" => 0x26,
+        "arrowright" => 0x27,
+        "arrowdown" => 0x28,
+        "delete" => 0x2E,
+        _ => 0x20,
+    }
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+fn map_key_to_code(_key: &str) -> u16 {
+    0
 }

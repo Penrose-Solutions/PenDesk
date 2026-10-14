@@ -1,7 +1,19 @@
 import { WebRtcManager } from './webrtc-manager.js?v=2027_v6';
 
 // Check Tauri native environment
-const isTauri = typeof window !== 'undefined' && typeof window.__TAURI__ !== 'undefined';
+const isTauri = typeof window !== 'undefined' && (
+  typeof window.__TAURI__ !== 'undefined' ||
+  typeof window.__TAURI_INTERNALS__ !== 'undefined' ||
+  window.location.protocol === 'tauri:' ||
+  window.location.protocol === 'asset:' ||
+  window.location.protocol === 'file:' ||
+  window.location.hostname === 'tauri.localhost' ||
+  window.location.search.includes('app=desktop')
+);
+
+if (isTauri && typeof document !== 'undefined' && document.documentElement) {
+  document.documentElement.classList.add('is-desktop-app');
+}
 
 // Use sessionStorage in browser so each tab has its own unique Desk ID for testing
 const storage = (typeof window !== 'undefined' && !isTauri && window.sessionStorage) 
@@ -71,7 +83,12 @@ const state = {
 
   // Unattended Access State
   allowUnattended: (typeof localStorage !== 'undefined' && localStorage.getItem('pendesk_unattended_enabled') === 'true'),
-  permanentPassword: (typeof localStorage !== 'undefined' && localStorage.getItem('pendesk_permanent_password')) || ''
+  permanentPassword: (typeof localStorage !== 'undefined' && localStorage.getItem('pendesk_permanent_password')) || '',
+
+  // Remote Session Capabilities
+  remoteIsDesktop: true,
+  remoteDeviceName: '',
+  hasWarnedWebControl: false
 };
 
 function escapeHtml(str) {
@@ -155,6 +172,7 @@ const elSessionOverlay = document.getElementById('session-overlay');
 const elRemoteVideo = document.getElementById('remote-video');
 const elStatLatency = document.getElementById('stat-latency');
 const elStatFps = document.getElementById('stat-fps');
+const elSessionModeBadge = document.getElementById('session-mode-badge');
 const elBtnDisconnect = document.getElementById('btn-disconnect');
 const elBtnFullscreen = document.getElementById('btn-fullscreen');
 
@@ -405,6 +423,26 @@ const rtc = new WebRtcManager({
     if (elVpsLabel) {
       const host = (state.signalingUrl || '').replace(/^wss?:\/\//, '').replace(/\/.*$/, '');
       elVpsLabel.textContent = `Sikker tilkobling: ${host} (TLS 1.3 / DTLS-SRTP)`;
+    }
+  },
+
+  onSessionStarted: ({ partnerId, deviceName, isDesktop }) => {
+    state.remoteDeviceName = deviceName;
+    state.remoteIsDesktop = isDesktop;
+    state.hasWarnedWebControl = false;
+    if (elSessionModeBadge) {
+      if (isDesktop) {
+        elSessionModeBadge.textContent = 'Full kontroll';
+        elSessionModeBadge.style.background = 'rgba(34, 197, 94, 0.18)';
+        elSessionModeBadge.style.color = '#22c55e';
+        elSessionModeBadge.title = 'Verten kjører PenDesk skrivebordsapp med full støtte for mus og tastatur.';
+      } else {
+        elSessionModeBadge.textContent = 'Kun visning (Nettleser)';
+        elSessionModeBadge.style.background = 'rgba(234, 179, 8, 0.2)';
+        elSessionModeBadge.style.color = '#eab308';
+        elSessionModeBadge.title = 'Verten er tilkoblet via nettleser. For å styre mus og tastatur må verten åpne PenDesk-appen.';
+        showToast('Info: Verten deler via nettleser (kun skjermvisning). For å styre mus og tastatur må verten åpne PenDesk skrivebordsapp.', 'info', 7000);
+      }
     }
   },
 
@@ -1517,6 +1555,10 @@ function setupInputForwarding() {
     if (!state.inSession) return;
     const { x, y } = getNormalizedCoords(e);
     rtc.sendInputEvent({ type: 'mousedown', x, y, button: e.button });
+    if (!state.remoteIsDesktop && !state.hasWarnedWebControl) {
+      state.hasWarnedWebControl = true;
+      showToast('Obs: Verten er i nettleser (kun skjermvisning). For å styre mus og tastatur må verten åpne PenDesk-appen.', 'warning', 7000);
+    }
   });
 
   container.addEventListener('mouseup', (e) => {
@@ -1534,6 +1576,10 @@ function setupInputForwarding() {
     if (!state.inSession) return;
     if (['Tab', 'Alt', 'Meta', 'F5'].includes(e.key)) e.preventDefault();
     rtc.sendInputEvent({ type: 'keydown', key: e.key, code: e.code });
+    if (!state.remoteIsDesktop && !state.hasWarnedWebControl) {
+      state.hasWarnedWebControl = true;
+      showToast('Obs: Verten er i nettleser (kun skjermvisning). For å styre mus og tastatur må verten åpne PenDesk-appen.', 'warning', 7000);
+    }
   });
 
   window.addEventListener('keyup', (e) => {
@@ -1693,7 +1739,7 @@ function setupUpdaterListeners() {
         const isMac = navigator.platform.includes('Mac');
         const dlUrl = isMac
           ? 'https://hjelp.penrose.no/downloads/Penrose-Fjernhjelp-macOS.dmg'
-          : 'https://hjelp.penrose.no/downloads/Penrose-Fjernhjelp-host=hjelp.penrose.no,key=bIi4hYV1UEEtm4YGT6gkqG1ckDoFj8o2B8Kbei9hqy8=.exe';
+          : 'https://hjelp.penrose.no/downloads/Penrose-Fjernhjelp-Windows.exe';
         window.open(dlUrl, '_blank');
         showToast('Laster ned nyeste installasjonspakke...', 'success');
       }
@@ -1715,7 +1761,7 @@ function detectVisitorOS() {
   let osType = 'windows';
   let osName = 'Windows';
   let dlUrl = '/downloads/Penrose-Fjernhjelp-Windows.exe';
-  let meta = '64-bit .exe · v1.0.0 (25 MB)';
+  let meta = '64-bit .exe · v1.0.0 (8.0 MB)';
 
   if (isMac) {
     let isAppleSilicon = true;
@@ -1735,18 +1781,18 @@ function detectVisitorOS() {
       osType = 'mac-arm';
       osName = 'macOS (Apple Silicon)';
       dlUrl = '/downloads/Penrose-Fjernhjelp-macOS-AppleSilicon.dmg';
-      meta = 'Apple Silicon .dmg · v1.0.0 (29 MB)';
+      meta = 'Apple Silicon .dmg · v1.0.0 (4.5 MB)';
     } else {
       osType = 'mac-intel';
       osName = 'macOS (Intel)';
       dlUrl = '/downloads/Penrose-Fjernhjelp-macOS-Intel.dmg';
-      meta = 'Intel .dmg · v1.0.0 (36 MB)';
+      meta = 'Intel .dmg · v1.0.0 (37 MB)';
     }
   } else if (isWin) {
     osType = 'windows';
     osName = 'Windows';
     dlUrl = '/downloads/Penrose-Fjernhjelp-Windows.exe';
-    meta = '64-bit .exe · v1.0.0 (25 MB)';
+    meta = '64-bit .exe · v1.0.0 (8.0 MB)';
   } else if (isLinux) {
     osType = 'linux';
     osName = 'Linux';
@@ -1759,6 +1805,16 @@ function detectVisitorOS() {
 
 function setupPortalLauncher() {
   const elPortal = document.getElementById('gateway-portal');
+
+  // When running inside the desktop app, completely disable and hide the web portal
+  if (isTauri) {
+    if (document.documentElement) document.documentElement.classList.add('is-desktop-app');
+    if (elPortal) {
+      elPortal.classList.add('portal-hidden');
+      elPortal.style.display = 'none';
+    }
+    return;
+  }
   const elBtnLaunchWeb = document.getElementById('btn-portal-launch-web');
   const elBtnSkipTop = document.getElementById('btn-portal-skip-top');
   const elBtnSmartDl = document.getElementById('btn-portal-smart-dl');
@@ -1833,9 +1889,31 @@ function setupPortalLauncher() {
   }
 }
 
+function setupThemeToggle() {
+  const toggleTheme = () => {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try {
+      localStorage.setItem('penrose_theme', next);
+    } catch (e) {}
+  };
+
+  const portalToggle = document.getElementById('portal-theme-toggle');
+  if (portalToggle) {
+    portalToggle.addEventListener('click', toggleTheme);
+  }
+
+  const appToggle = document.getElementById('app-theme-toggle');
+  if (appToggle) {
+    appToggle.addEventListener('click', toggleTheme);
+  }
+}
+
 // Bootstrap
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
+    setupThemeToggle();
     setupEventListeners();
     setupUpdaterListeners();
     setupPortalLauncher();
@@ -1844,6 +1922,7 @@ if (document.readyState === 'loading') {
     setTimeout(() => checkForAppUpdates(false), 3000);
   });
 } else {
+  setupThemeToggle();
   setupEventListeners();
   setupUpdaterListeners();
   setupPortalLauncher();
@@ -1851,5 +1930,6 @@ if (document.readyState === 'loading') {
   rtc.connectSignaling();
   setTimeout(() => checkForAppUpdates(false), 3000);
 }
+
 
 

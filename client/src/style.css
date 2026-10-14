@@ -4,39 +4,44 @@
    Exact match with penrose.no Design System (2027 Edition)
    ========================================================================== */
 
-:root {
-  /* Obsidian Carbon Theme (penrose.no) */
-  --bg-canvas: #090B0E;
-  --bg-surface: #101319;
-  --bg-surface-elevated: #151922;
-  --bg-subtle: #181C26;
-  --bg-subtle-hover: #212635;
-  --bg-inset: #0D0F14;
+:root,
+[data-theme="light"] {
+  /* Surface Tokens (Light Mode - Gallery Paper, penrose.no 2027) */
+  --bg-canvas: #FAF9F6;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #FFFFFF;
+  --bg-subtle: #F2F1EC;
+  --bg-subtle-hover: #E9E8E2;
+  --bg-inset: #EBEAE4;
 
   /* Typography Colors */
-  --text-primary: #F5F6F8;
-  --text-secondary: #9AA2B2;
-  --text-muted: #646C7E;
-  --text-inverse: #090B0E;
+  --text-primary: #0C0E12;
+  --text-secondary: #4C5462;
+  --text-muted: #7E8696;
+  --text-inverse: #FFFFFF;
 
   /* Architectural Hairline Borders */
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-medium: rgba(255, 255, 255, 0.15);
-  --border-strong: rgba(255, 255, 255, 0.28);
+  --border-subtle: rgba(12, 14, 18, 0.08);
+  --border-medium: rgba(12, 14, 18, 0.16);
+  --border-strong: rgba(12, 14, 18, 0.32);
 
-  /* Penrose Brand Precision Cobalt & Accents */
-  --accent-primary: #F5F6F8;
-  --accent-primary-hover: #FFFFFF;
+  /* Monochromatic Core Accents */
+  --accent-primary: #0C0E12;
+  --accent-primary-hover: #262B34;
+  --accent-contrast: #FFFFFF;
   --accent-blue: #2563EB;
   --accent-blue-hover: #1D4ED8;
-  --accent-blue-glow: rgba(37, 99, 235, 0.24);
-  --accent-blue-subtle: rgba(37, 99, 235, 0.12);
+  --accent-blue-glow: rgba(37, 99, 235, 0.18);
+  --accent-blue-subtle: rgba(37, 99, 235, 0.08);
 
-  --accent-success: #22C55E;
-  --accent-success-bg: rgba(34, 197, 94, 0.12);
-  --accent-warning: #F59E0B;
-  --accent-danger: #EF4444;
-  --accent-danger-bg: rgba(239, 68, 68, 0.14);
+  --accent-indicator: #2563EB;
+  --accent-indicator-glow: rgba(37, 99, 235, 0.18);
+  --accent-success: #15803D;
+  --accent-success-bg: #EAF7EE;
+  --accent-warning: #D97706;
+  --accent-warning-bg: #FEF3C7;
+  --accent-danger: #DC2626;
+  --accent-danger-bg: #FEE2E2;
 
   /* Typography */
   --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -51,16 +56,63 @@
   --radius-full: 9999px;
 
   /* Tactile Shadows */
-  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.5);
-  --shadow-hover: 0 16px 40px rgba(0, 0, 0, 0.7);
+  --shadow-subtle: 0 1px 2px rgba(12, 14, 18, 0.04);
+  --shadow-card: 0 4px 16px rgba(12, 14, 18, 0.04), 0 1px 3px rgba(12, 14, 18, 0.02);
+  --shadow-hover: 0 16px 36px rgba(12, 14, 18, 0.08), 0 2px 6px rgba(12, 14, 18, 0.03);
+  --shadow-elevated: 0 24px 50px rgba(12, 14, 18, 0.12), 0 4px 12px rgba(12, 14, 18, 0.04);
 
   /* Easing */
   --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
   --transition-fast: 120ms var(--ease-snappy);
   --transition-base: 200ms var(--ease-snappy);
   --transition-smooth: 350ms var(--ease-snappy);
+
+  color-scheme: light;
 }
+
+[data-theme="dark"] {
+  /* Obsidian Carbon Theme (penrose.no) */
+  --bg-canvas: #090B0E;
+  --bg-surface: #101319;
+  --bg-surface-elevated: #151922;
+  --bg-subtle: #181C26;
+  --bg-subtle-hover: #212635;
+  --bg-inset: #0D0F14;
+
+  --text-primary: #F5F6F8;
+  --text-secondary: #9AA2B2;
+  --text-muted: #646C7E;
+  --text-inverse: #090B0E;
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.15);
+  --border-strong: rgba(255, 255, 255, 0.28);
+
+  --accent-primary: #F5F6F8;
+  --accent-primary-hover: #FFFFFF;
+  --accent-contrast: #090B0E;
+  --accent-blue: #3B82F6;
+  --accent-blue-hover: #2563EB;
+  --accent-blue-glow: rgba(59, 130, 246, 0.24);
+  --accent-blue-subtle: rgba(59, 130, 246, 0.12);
+
+  --accent-indicator: #3B82F6;
+  --accent-indicator-glow: rgba(59, 130, 246, 0.24);
+  --accent-success: #22C55E;
+  --accent-success-bg: rgba(34, 197, 94, 0.12);
+  --accent-warning: #F59E0B;
+  --accent-warning-bg: rgba(245, 158, 11, 0.15);
+  --accent-danger: #EF4444;
+  --accent-danger-bg: rgba(239, 68, 68, 0.14);
+
+  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-hover: 0 16px 40px rgba(0, 0, 0, 0.7);
+  --shadow-elevated: 0 24px 54px rgba(0, 0, 0, 0.8);
+
+  color-scheme: dark;
+}
+
 
 * {
   box-sizing: border-box;
@@ -1859,63 +1911,188 @@ body {
 
 /* ==========================================================================
    GATEWAY PORTAL / LAUNCHER (Web UI vs Desktop Downloads)
+   Matches penrose.no Scandinavian Architectural Design System (2027)
    ========================================================================== */
 
+/* Brand & Logo rules for penrose.no */
+.logo-white {
+  display: none !important;
+}
+
+.logo-black {
+  display: block !important;
+}
+
+[data-theme="dark"] .logo-black {
+  display: none !important;
+}
+
+[data-theme="dark"] .logo-white {
+  display: block !important;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+}
+
+.brand-symbol-img {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+  transition: transform var(--transition-fast);
+}
+
+.brand:hover .brand-symbol-img {
+  transform: scale(1.05) rotate(1deg);
+}
+
+.brand-text-wrap {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.brand-subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+/* Theme Toggle Button (Exact match with penrose.no) */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: transform var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--bg-subtle-hover);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+.theme-toggle-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.theme-toggle-btn .icon-moon {
+  display: none;
+}
+
+[data-theme="dark"] .theme-toggle-btn .icon-sun {
+  display: none;
+}
+
+[data-theme="dark"] .theme-toggle-btn .icon-moon {
+  display: block;
+}
+
+/* Gateway Portal Container */
 .gateway-portal {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background-color: #07090E;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s, background-color var(--transition-base);
 }
 
-.gateway-portal.portal-hidden {
-  opacity: 0;
-  pointer-events: none;
-  visibility: hidden;
-  transform: scale(1.015);
+.gateway-portal.portal-hidden,
+.is-desktop-app .gateway-portal,
+.is-desktop-app #gateway-portal {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 
-/* Ambient Background Light Blobs */
+.is-desktop-app .btn-header-download,
+.is-desktop-app #btn-header-download,
+.is-desktop-app #nav-downloads {
+  display: none !important;
+}
+
+/* Ambient Background Elements */
 .portal-ambient-blob {
   position: fixed;
   border-radius: 50%;
-  filter: blur(140px);
+  filter: blur(150px);
   pointer-events: none;
   z-index: 0;
-  opacity: 0.45;
+  opacity: 0.28;
 }
 
 .portal-blob-1 {
-  width: 500px;
-  height: 500px;
-  top: -100px;
-  left: -100px;
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.35) 0%, transparent 70%);
+  width: 550px;
+  height: 550px;
+  top: -120px;
+  left: -120px;
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, transparent 70%);
 }
 
 .portal-blob-2 {
-  width: 600px;
-  height: 600px;
+  width: 650px;
+  height: 650px;
   bottom: -150px;
   right: -150px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(21, 128, 61, 0.1) 0%, transparent 70%);
+}
+
+[data-theme="dark"] .portal-ambient-blob {
+  opacity: 0.42;
+}
+
+[data-theme="dark"] .portal-blob-1 {
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.32) 0%, transparent 70%);
+}
+
+[data-theme="dark"] .portal-blob-2 {
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, transparent 70%);
 }
 
 .portal-ambient-grid {
   position: fixed;
   inset: 0;
   background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    linear-gradient(to right, var(--border-subtle) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--border-subtle) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
   z-index: 0;
+  opacity: 0.65;
 }
 
 /* Container */
@@ -1923,8 +2100,8 @@ body {
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 1180px;
-  padding: 32px 36px 48px;
+  max-width: 1140px;
+  padding: 32px 32px 48px;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -1935,55 +2112,52 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 48px;
+  margin-bottom: 52px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-.portal-brand {
+.portal-nav {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: clamp(1rem, 1.8vw, 2rem);
 }
 
-.portal-logo-img {
-  width: 36px;
-  height: 36px;
-  object-fit: contain;
-  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.2));
+@media (max-width: 860px) {
+  .portal-nav {
+    display: none;
+  }
 }
 
-.portal-brand-text {
-  display: flex;
-  flex-direction: column;
+.portal-nav .nav-link {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
 }
 
-.portal-brand-name {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 700;
+.portal-nav .nav-link:hover {
   color: var(--text-primary);
-  letter-spacing: -0.3px;
-}
-
-.portal-brand-version {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
 }
 
 .portal-topbar-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+}
+
+.portal-status-pill {
+  font-size: 11px;
 }
 
 .btn-portal-ghost {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-full);
+  gap: 7px;
+  padding: 7px 14px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: 12px;
   font-weight: 500;
@@ -1993,7 +2167,7 @@ body {
 
 .btn-portal-ghost:hover {
   background: var(--bg-subtle-hover);
-  border-color: var(--border-strong);
+  border-color: var(--border-medium);
   color: var(--text-primary);
   transform: translateX(2px);
 }
@@ -2001,23 +2175,24 @@ body {
 /* Hero Header */
 .portal-hero {
   text-align: center;
-  max-width: 780px;
-  margin: 0 auto 52px;
+  max-width: 740px;
+  margin: 0 auto 48px;
 }
 
 .portal-hero-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
+  padding: 5px 13px;
   border-radius: var(--radius-full);
-  background: rgba(37, 99, 235, 0.12);
-  border: 1px solid rgba(37, 99, 235, 0.3);
-  color: #60A5FA;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--accent-indicator);
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.8px;
-  margin-bottom: 20px;
+  letter-spacing: 0.08em;
+  margin-bottom: 18px;
   text-transform: uppercase;
 }
 
@@ -2025,26 +2200,29 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #3B82F6;
-  box-shadow: 0 0 8px #3B82F6;
+  background: var(--accent-indicator);
+  box-shadow: 0 0 8px var(--accent-indicator-glow);
   animation: pulse-dot 2s infinite ease-in-out;
 }
 
 .portal-hero-title {
   font-family: var(--font-display);
-  font-size: 42px;
+  font-size: clamp(2.3rem, 4.5vw, 3.4rem);
   font-weight: 700;
-  letter-spacing: -1.2px;
-  color: #FFFFFF;
+  letter-spacing: -0.035em;
+  color: var(--text-primary);
   margin: 0 0 16px;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 
 .portal-hero-subtitle {
-  font-size: 16px;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
   line-height: 1.6;
   color: var(--text-secondary);
   margin: 0;
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Dual Cards Grid */
@@ -2057,32 +2235,37 @@ body {
 
 .portal-card {
   position: relative;
-  background: rgba(16, 20, 29, 0.7);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   padding: 36px 32px 32px;
   display: flex;
   flex-direction: column;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+  transition: transform var(--transition-smooth), border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+  box-shadow: var(--shadow-card);
 }
 
 .portal-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 20px 45px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(37, 99, 235, 0.12);
+  border-color: var(--border-medium);
+  box-shadow: var(--shadow-hover);
 }
 
 .portal-card-desktop {
-  border-color: rgba(37, 99, 235, 0.28);
-  background: linear-gradient(180deg, rgba(20, 26, 39, 0.85) 0%, rgba(13, 17, 26, 0.85) 100%);
+  background: var(--bg-surface);
+  border-color: var(--border-medium);
+  position: relative;
 }
 
-.portal-card-desktop:hover {
-  border-color: rgba(59, 130, 246, 0.55);
-  box-shadow: 0 24px 50px -15px rgba(0, 0, 0, 0.85), 0 0 45px rgba(59, 130, 246, 0.22);
+.portal-card-desktop::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-blue) 0%, #60A5FA 100%);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .portal-card-header {
@@ -2098,32 +2281,33 @@ body {
   gap: 6px;
   padding: 4px 10px;
   border-radius: var(--radius-full);
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
 }
 
 .badge-web {
-  background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: var(--accent-success-bg);
+  border: 1px solid rgba(21, 128, 61, 0.2);
   color: var(--accent-success);
 }
 
 .badge-desktop {
-  background: rgba(59, 130, 246, 0.15);
-  border: 1px solid rgba(59, 130, 246, 0.4);
-  color: #60A5FA;
+  background: var(--accent-blue-subtle);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  color: var(--accent-blue);
 }
 
 .portal-card-icon-wrap {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-medium);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
 }
 
 .icon-web {
@@ -2131,22 +2315,22 @@ body {
 }
 
 .icon-desktop {
-  color: #38BDF8;
-  border-color: rgba(56, 189, 248, 0.3);
-  background: rgba(37, 99, 235, 0.16);
+  color: var(--accent-blue);
+  background: var(--accent-blue-subtle);
+  border-color: rgba(37, 99, 235, 0.2);
 }
 
 .portal-card-title {
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.03em;
   color: var(--text-primary);
   margin: 0 0 10px;
 }
 
 .portal-card-desc {
-  font-size: 14px;
+  font-size: 0.925rem;
   line-height: 1.55;
   color: var(--text-secondary);
   margin: 0 0 24px;
@@ -2174,8 +2358,8 @@ body {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: var(--accent-success-bg);
+  border: 1px solid rgba(21, 128, 61, 0.25);
   color: var(--accent-success);
   display: flex;
   align-items: center;
@@ -2185,20 +2369,21 @@ body {
 }
 
 .feat-check-blue {
-  background: rgba(59, 130, 246, 0.15);
-  border-color: rgba(59, 130, 246, 0.35);
-  color: #60A5FA;
+  background: var(--accent-blue-subtle);
+  border-color: rgba(37, 99, 235, 0.25);
+  color: var(--accent-blue);
 }
 
 .portal-features-list strong {
   display: block;
-  font-size: 13px;
+  font-size: 0.875rem;
+  font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 2px;
 }
 
 .portal-features-list span {
-  font-size: 12px;
+  font-size: 0.8rem;
   color: var(--text-muted);
   line-height: 1.4;
 }
@@ -2212,9 +2397,10 @@ body {
 
 .btn-portal-action {
   width: 100%;
-  padding: 15px 24px;
-  border-radius: var(--radius-md);
-  font-size: 15px;
+  padding: 14px 24px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -2222,31 +2408,31 @@ body {
   justify-content: center;
   gap: 10px;
   text-decoration: none;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all var(--transition-fast);
   border: none;
 }
 
 .btn-portal-primary {
-  background: var(--text-primary);
-  color: #07090E;
+  background: var(--accent-primary);
+  color: var(--accent-contrast);
 }
 
 .btn-portal-primary:hover {
-  background: #FFFFFF;
+  background: var(--accent-primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-card);
 }
 
 .btn-portal-download {
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  background: var(--accent-blue);
   color: #FFFFFF;
-  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 14px var(--accent-blue-glow);
 }
 
 .btn-portal-download:hover {
-  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  background: var(--accent-blue-hover);
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.5);
+  box-shadow: 0 8px 24px var(--accent-blue-glow);
   color: #FFFFFF;
 }
 
@@ -2258,14 +2444,14 @@ body {
 }
 
 .btn-dl-main {
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 600;
   line-height: 1.2;
 }
 
 .btn-dl-meta {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.85);
   font-family: var(--font-mono);
   margin-top: 2px;
 }
@@ -2288,6 +2474,7 @@ body {
   font-size: 11px;
   color: var(--text-muted);
   font-weight: 500;
+  font-family: var(--font-mono);
 }
 
 .pills-row {
@@ -2301,7 +2488,7 @@ body {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-subtle);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
@@ -2377,9 +2564,9 @@ body {
   gap: 7px;
   padding: 6px 14px;
   border-radius: var(--radius-full);
-  background: rgba(37, 99, 235, 0.15);
-  border: 1px solid rgba(37, 99, 235, 0.35);
-  color: #93C5FD;
+  background: var(--accent-blue-subtle);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  color: var(--accent-blue);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -2387,10 +2574,9 @@ body {
 }
 
 .btn-header-download:hover {
-  background: rgba(37, 99, 235, 0.28);
-  border-color: rgba(59, 130, 246, 0.6);
-  color: #FFFFFF;
-  box-shadow: 0 0 15px rgba(37, 99, 235, 0.3);
+  background: rgba(37, 99, 235, 0.16);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
 }
 
 /* Responsive adjustments */
@@ -2399,7 +2585,7 @@ body {
     grid-template-columns: 1fr;
   }
   .portal-hero-title {
-    font-size: 32px;
+    font-size: 28px;
   }
   .portal-container {
     padding: 24px 20px 40px;
