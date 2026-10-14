@@ -255,6 +255,15 @@ body {
   50% { opacity: 0.45; transform: scale(0.85); }
 }
 
+.status-lock-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  display: inline-block;
+  opacity: 0.9;
+}
+
+
 /* Permission Banner */
 .permission-banner {
   background: var(--bg-surface-elevated);

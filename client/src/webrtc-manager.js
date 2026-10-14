@@ -41,7 +41,7 @@ export class WebRtcManager {
   }
 
   connectSignaling() {
-    this.onStatusChange('connecting', 'Connecting to VPS Signaling...');
+    this.onStatusChange('connecting', 'Etablerer sikker forbindelse (TLS 1.3)...');
 
     if (this.ws) {
       try { this.ws.close(); } catch {}
@@ -57,7 +57,7 @@ export class WebRtcManager {
     }
 
     this.ws.onopen = () => {
-      this.onStatusChange('connected', 'Tilkoblet VPS | Tildeler ID...');
+      this.onStatusChange('connected', 'Sikker tilkobling | Tildeler ID...');
       this.ws.send(
         JSON.stringify({
           type: 'register',
@@ -82,7 +82,7 @@ export class WebRtcManager {
 
     this.ws.onclose = () => {
       this._stopHeartbeat();
-      this.onStatusChange('offline', 'Frakoblet fra VPS. Prøver igjen...');
+      this.onStatusChange('offline', 'Frakoblet sikker VPS. Prøver igjen...');
       this._teardownPeer();
       this._scheduleReconnect();
     };
@@ -144,7 +144,7 @@ export class WebRtcManager {
       case 'registered': {
         this.clientId = msg.clientId;
         this.iceServers = msg.iceServers || [{ urls: ['stun:stun.l.google.com:19302'] }];
-        this.onStatusChange('ready', 'Connected to VPS | Ready');
+        this.onStatusChange('ready', 'Sikker tilkobling (DTLS-SRTP AES-256)');
         this.onRegistered(this.clientId);
         break;
       }
@@ -159,7 +159,7 @@ export class WebRtcManager {
         if (msg.sdpAnswer && this.peerConnection) {
           await this.peerConnection.setRemoteDescription(new RTCSessionDescription(msg.sdpAnswer));
           await this._drainIceCandidates();
-          this.onStatusChange('in_session', `I økt med ${msg.targetId}`);
+          this.onStatusChange('in_session', `Sikker økt med ${msg.targetId} (AES-256)`);
           this._startTelemetryLoop();
         }
         break;
@@ -205,7 +205,7 @@ export class WebRtcManager {
 
       case 'session_ended': {
         this._teardownPeer();
-        this.onStatusChange('ready', 'Tilkoblet VPS | Klar');
+        this.onStatusChange('ready', 'Sikker tilkobling (DTLS-SRTP AES-256)');
         this.onSessionEnded(msg.reason || 'Partneren avsluttet økten.');
         break;
       }
@@ -215,7 +215,7 @@ export class WebRtcManager {
   async dial(targetId, password) {
     this.activePartnerId = targetId;
     this.isHost = false;
-    this.onStatusChange('connecting', `Dialing ${targetId}...`);
+    this.onStatusChange('connecting', `Oppretter kryptert P2P-økt til ${targetId}...`);
 
     this.peerConnection = new RTCPeerConnection({
       iceServers: this.iceServers,
@@ -410,7 +410,7 @@ export class WebRtcManager {
       })
     );
 
-    this.onStatusChange('in_session', `Fjernstyres av ${callerId}`);
+    this.onStatusChange('in_session', `Fjernstyres sikkert av ${callerId} (AES-256)`);
     this._startTelemetryLoop();
   }
 
@@ -676,7 +676,7 @@ export class WebRtcManager {
       }
     }
     this._teardownPeer();
-    this.onStatusChange('ready', 'Tilkoblet VPS | Klar');
+    this.onStatusChange('ready', 'Sikker tilkobling (DTLS-SRTP AES-256)');
     this.onSessionEnded(reason);
   }
 

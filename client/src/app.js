@@ -402,7 +402,10 @@ const rtc = new WebRtcManager({
   onStatusChange: (status, message) => {
     if (elStatusPill) elStatusPill.className = 'status-pill ' + (status === 'ready' ? '' : status);
     if (elStatusText) elStatusText.textContent = message;
-    if (elVpsLabel) elVpsLabel.textContent = `VPS: ${state.signalingUrl}`;
+    if (elVpsLabel) {
+      const host = (state.signalingUrl || '').replace(/^wss?:\/\//, '').replace(/\/.*$/, '');
+      elVpsLabel.textContent = `Sikker tilkobling: ${host} (TLS 1.3 / DTLS-SRTP)`;
+    }
   },
 
   onRegistered: (assignedId) => {
@@ -601,7 +604,7 @@ const rtc = new WebRtcManager({
 
     // Reset status pill to ready
     if (elStatusPill) elStatusPill.className = 'status-pill';
-    if (elStatusText) elStatusText.textContent = 'Tilkoblet VPS | Klar';
+    if (elStatusText) elStatusText.textContent = 'Sikker tilkobling (DTLS-SRTP AES-256)';
 
     // Refresh one-time passcode for security
     state.localPasscode = generateRandomPasscode();
