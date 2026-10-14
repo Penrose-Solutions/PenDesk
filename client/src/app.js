@@ -1586,15 +1586,135 @@ function renderRecentConnections() {
   });
 }
 
+// ============================================================================
+// AUTO-UPDATER SUBSYSTEM (In-App Over-The-Air Updates)
+// ============================================================================
+const APP_VERSION = '1.0.0';
+const elUpdateBanner = document.getElementById('update-banner');
+const elUpdateBannerTitle = document.getElementById('update-banner-title');
+const elUpdateBannerDesc = document.getElementById('update-banner-desc');
+const elBtnUpdateNow = document.getElementById('btn-update-now');
+const elBtnDismissUpdate = document.getElementById('btn-dismiss-update');
+const elUpdaterStatusText = document.getElementById('updater-status-text');
+const elBtnCheckUpdates = document.getElementById('btn-check-updates');
+
+let availableUpdate = null;
+
+async function checkForAppUpdates(manual = false) {
+  if (elUpdaterStatusText && manual) {
+    elUpdaterStatusText.textContent = 'Søker etter oppdateringer...';
+  }
+
+  try {
+    const res = await fetch('https://hjelp.penrose.no/updates/latest.json', { cache: 'no-store' });
+    if (!res.ok) throw new Error('Kunne ikke hente oppdateringsinformasjon');
+    const manifest = await res.json();
+
+    const isNewer = compareVersions(manifest.version, APP_VERSION) > 0;
+    if (isNewer) {
+      availableUpdate = manifest;
+      if (elUpdateBanner) {
+        if (elUpdateBannerTitle) elUpdateBannerTitle.textContent = `Ny oppdatering klar (v${manifest.version})`;
+        if (elUpdateBannerDesc) elUpdateBannerDesc.textContent = manifest.notes || 'En ny versjon av PenDesk er klar for installasjon.';
+        elUpdateBanner.style.display = 'flex';
+      }
+      if (elUpdaterStatusText) {
+        elUpdaterStatusText.textContent = `Ny versjon v${manifest.version} er tilgjengelig!`;
+      }
+      if (manual) {
+        showToast(`Ny versjon v${manifest.version} er klar!`, 'info');
+      }
+    } else {
+      if (elUpdaterStatusText) {
+        elUpdaterStatusText.textContent = `PenDesk v${APP_VERSION} (Du har nyeste versjon)`;
+      }
+      if (manual) {
+        showToast('Du har allerede den nyeste versjonen av PenDesk', 'success');
+      }
+    }
+  } catch (err) {
+    console.warn('[Updater] Check failed:', err);
+    if (elUpdaterStatusText && manual) {
+      elUpdaterStatusText.textContent = `PenDesk v${APP_VERSION} (Kunne ikke nå server)`;
+    }
+    if (manual) {
+      showToast('Kunne ikke sjekke oppdateringer: ' + err.message, 'warning');
+    }
+  }
+}
+
+function compareVersions(v1, v2) {
+  const p1 = (v1 || '').split('.').map(n => parseInt(n, 10) || 0);
+  const p2 = (v2 || '').split('.').map(n => parseInt(n, 10) || 0);
+  const len = Math.max(p1.length, p2.length);
+  for (let i = 0; i < len; i++) {
+    const num1 = p1[i] || 0;
+    const num2 = p2[i] || 0;
+    if (num1 > num2) return 1;
+    if (num1 < num2) return -1;
+  }
+  return 0;
+}
+
+function setupUpdaterListeners() {
+  if (elBtnDismissUpdate && elUpdateBanner) {
+    elBtnDismissUpdate.addEventListener('click', () => {
+      elUpdateBanner.style.display = 'none';
+    });
+  }
+
+  if (elBtnCheckUpdates) {
+    elBtnCheckUpdates.addEventListener('click', () => {
+      checkForAppUpdates(true);
+    });
+  }
+
+  if (elBtnUpdateNow) {
+    elBtnUpdateNow.addEventListener('click', async () => {
+      if (window.__TAURI__ && window.__TAURI__.updater) {
+        // Native Tauri updater
+        elBtnUpdateNow.disabled = true;
+        elBtnUpdateNow.textContent = 'Laster ned...';
+        try {
+          const { checkUpdate, installUpdate } = window.__TAURI__.updater;
+          const { shouldUpdate } = await checkUpdate();
+          if (shouldUpdate) {
+            await installUpdate();
+            showToast('Oppdatering fullført! Starter på nytt...', 'success');
+            await window.__TAURI__.process.relaunch();
+          }
+        } catch (err) {
+          alert('Automatisk oppdatering feilet: ' + err.message);
+          elBtnUpdateNow.disabled = false;
+          elBtnUpdateNow.textContent = 'Oppdater nå';
+        }
+      } else {
+        // Web fallback download
+        const isMac = navigator.platform.includes('Mac');
+        const dlUrl = isMac
+          ? 'https://hjelp.penrose.no/downloads/Penrose-Fjernhjelp-macOS.dmg'
+          : 'https://hjelp.penrose.no/downloads/Penrose-Fjernhjelp-host=hjelp.penrose.no,key=bIi4hYV1UEEtm4YGT6gkqG1ckDoFj8o2B8Kbei9hqy8=.exe';
+        window.open(dlUrl, '_blank');
+        showToast('Laster ned nyeste installasjonspakke...', 'success');
+      }
+    });
+  }
+}
+
 // Bootstrap
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
+    setupUpdaterListeners();
     loadCurrentUser();
     rtc.connectSignaling();
+    setTimeout(() => checkForAppUpdates(false), 3000);
   });
 } else {
   setupEventListeners();
+  setupUpdaterListeners();
   loadCurrentUser();
   rtc.connectSignaling();
+  setTimeout(() => checkForAppUpdates(false), 3000);
 }
+

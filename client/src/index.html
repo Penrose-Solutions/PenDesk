@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=2027_v13" />
+  <link rel="stylesheet" href="style.css?v=2027_v15" />
 </head>
 <body>
   <div id="app">
@@ -85,6 +85,27 @@
           </div>
         </div>
       </header>
+
+      <!-- Auto-Updater Notification Banner (Conditionally Displayed) -->
+      <div class="update-banner" id="update-banner" style="display: none;">
+        <div class="update-banner-content">
+          <div class="update-banner-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </div>
+          <div class="update-banner-text">
+            <strong id="update-banner-title">Ny oppdatering klar</strong>
+            <span id="update-banner-desc">Trykk for å installere den nyeste versjonen automatisk.</span>
+          </div>
+        </div>
+        <div class="update-banner-actions">
+          <button class="btn-primary" id="btn-update-now" style="padding: 7px 16px; font-size: 12px;">Oppdater nå</button>
+          <button class="btn-close" id="btn-dismiss-update" title="Lukk varsel" style="font-size: 18px; line-height: 1;">&times;</button>
+        </div>
+      </div>
 
       <!-- macOS Permission Notice (Conditionally Displayed) -->
       <div class="permission-banner" id="permission-banner" style="display: none;">
@@ -450,6 +471,19 @@
           />
         </div>
 
+        <!-- Software & Auto-Updates Section -->
+        <div style="border-top: 1px solid var(--border-subtle); padding-top: 14px; margin-top: 14px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Programvareoppdatering</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;" id="updater-status-text">PenDesk v1.0.0 (Oppdatert)</div>
+            </div>
+            <button class="btn-secondary" id="btn-check-updates" style="padding: 6px 12px; font-size: 11px;">
+              Søk etter oppdatering
+            </button>
+          </div>
+        </div>
+
         <button class="btn-primary" id="btn-save-settings">Lagre og koble til</button>
       </div>
     </div>
@@ -662,6 +696,6 @@
     <div class="toast-container" id="toast-container"></div>
   </div>
 
-  <script type="module" src="app.js?v=2027_v14"></script>
+  <script type="module" src="app.js?v=2027_v15"></script>
 </body>
 </html>

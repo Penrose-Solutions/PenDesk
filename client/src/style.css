@@ -277,6 +277,60 @@ body {
   gap: 16px;
 }
 
+/* Auto-Updater Notification Banner */
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.12));
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: var(--radius-md);
+  gap: 16px;
+  animation: slide-in-top 0.3s ease-out;
+}
+
+.update-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.update-banner-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: rgba(59, 130, 246, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-blue);
+  flex-shrink: 0;
+}
+
+.update-banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.update-banner-text strong {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.update-banner-text span {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.update-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
 .banner-text {
   display: flex;
   align-items: center;

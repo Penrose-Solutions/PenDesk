@@ -24,6 +24,17 @@
       "csp": null
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "RWQCc5XROM++DIdHnQYYDoBNYf/T+VI4aMyfMnSUdZaZlghwXKPIdSWN",
+      "endpoints": [
+        "https://hjelp.penrose.no/updates/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

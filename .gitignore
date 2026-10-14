@@ -10,10 +10,15 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Environment secrets
+# Environment secrets & Updater keys
 .env
 infra/.env
 turnserver.generated.conf
+.updater-keys/
+*.key
+*.pub
+dist/
+releases/
 
 # OS generated
 .DS_Store
