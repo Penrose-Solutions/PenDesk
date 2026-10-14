@@ -1613,13 +1613,16 @@ body {
   background: var(--accent-danger-bg);
 }
 
-/* Auth Modal Tabs & Forms */
+/* Auth Dialog & Form Styling */
 .auth-dialog {
-  max-width: 420px;
+  width: 440px;
+  max-width: calc(100vw - 32px);
+  padding: 30px;
+  box-shadow: var(--shadow-hover);
 }
 
 .auth-tabs {
-  display: flex;
+  display: inline-flex;
   gap: 4px;
   background: var(--bg-inset);
   padding: 3px;
@@ -1646,6 +1649,51 @@ body {
   box-shadow: var(--shadow-subtle);
 }
 
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.auth-form .input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.auth-form .input-field {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+
+.auth-form .btn-primary {
+  width: 100%;
+  margin-top: 6px;
+  padding: 13px;
+  font-size: 14px;
+}
+
+#form-add-device {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+#form-add-device .input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+#form-add-device .input-field {
+  width: 100%;
+}
+
 .auth-alert {
   padding: 10px 14px;
   border-radius: var(--radius-sm);
@@ -1653,7 +1701,7 @@ body {
   background: var(--accent-danger-bg);
   border: 1px solid rgba(239, 68, 68, 0.3);
   color: var(--accent-danger);
-  margin-bottom: 12px;
+  margin-bottom: 4px;
   animation: fadeIn 0.2s ease;
 }
 
