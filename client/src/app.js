@@ -995,6 +995,16 @@ function setupAuthAndDeviceListeners() {
   if (elNavDevices) {
     elNavDevices.addEventListener('click', () => switchView('devices'));
   }
+  const elNavHistory = document.getElementById('nav-history');
+  if (elNavHistory) {
+    elNavHistory.addEventListener('click', () => {
+      switchView('desk');
+      const recentSection = document.querySelector('.recent-sessions');
+      if (recentSection) {
+        recentSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  }
   const btnLogo = document.getElementById('btn-logo');
   if (btnLogo) {
     btnLogo.addEventListener('click', () => switchView('desk'));
@@ -1178,7 +1188,7 @@ function switchView(viewName) {
   if (elNavDevices) elNavDevices.classList.toggle('active', viewName === 'devices');
 
   if (elViewTitle) {
-    elViewTitle.textContent = viewName === 'devices' ? 'Mine Enheter' : 'Penrose Fjernhjelp';
+    elViewTitle.textContent = 'Penrose Fjernhjelp';
   }
 
   if (viewName === 'devices') {
