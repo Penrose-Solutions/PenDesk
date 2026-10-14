@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=2027_v8" />
+  <link rel="stylesheet" href="style.css?v=2027_v9" />
 </head>
 <body>
   <div id="app">
@@ -76,14 +76,31 @@
       </div>
 
       <!-- Host Active Remote Control Alert Banner -->
-      <div class="permission-banner" id="host-session-banner" style="display: none; border-left: 3px solid var(--accent-blue); background: var(--bg-surface-elevated);">
+      <div class="permission-banner" id="host-session-banner" style="display: none; border-left: 3px solid var(--accent-blue); background: var(--bg-surface-elevated); flex-wrap: wrap;">
         <div class="banner-text">
           <span class="status-dot" style="background: var(--accent-success); width: 10px; height: 10px;"></span>
           <span id="host-session-text">Du fjernstyres nå av partner.</span>
         </div>
-        <button class="toolbar-btn btn-danger" id="btn-host-disconnect" style="padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;">
-          Avslutt fjernstyring
-        </button>
+        <div class="banner-actions" style="display: flex; align-items: center; gap: 8px;">
+          <button class="toolbar-btn" id="btn-host-toggle-drawer" title="Åpne Support Chat og Fildeling" style="padding: 6px 12px; background: var(--bg-subtle); border-radius: var(--radius-sm); position: relative;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>Chat & Filer</span>
+            <span class="badge-unread" id="host-chat-unread-badge" style="display: none;">0</span>
+          </button>
+          <button class="toolbar-btn" id="btn-host-switch-screen" title="Bytt aktiv skjerm eller programvindu" style="padding: 6px 12px; background: var(--bg-subtle); border-radius: var(--radius-sm);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+              <line x1="8" y1="21" x2="16" y2="21"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+            </svg>
+            <span>Bytt skjerm</span>
+          </button>
+          <button class="toolbar-btn btn-danger" id="btn-host-disconnect" style="padding: 6px 14px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;">
+            Avslutt fjernstyring
+          </button>
+        </div>
       </div>
 
       <!-- Dual Desk Panel -->
@@ -213,19 +230,36 @@
           <span id="stat-transport">WebRTC P2P</span>
         </div>
 
+        <button class="toolbar-btn" id="btn-toggle-chat" title="Åpne Support Chat" style="position: relative;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span>Chat</span>
+          <span class="badge-unread" id="chat-unread-badge" style="display: none;">0</span>
+        </button>
+
+        <button class="toolbar-btn" id="btn-toggle-files" title="Filoverføring">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <span>Filer</span>
+        </button>
+
+        <button class="toolbar-btn" id="btn-toggle-clipboard" title="Synkroniser Utklippstavle">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+          </svg>
+          <span>Utklippstavle</span>
+        </button>
+
         <button class="toolbar-btn" id="btn-fullscreen" title="Fullskjerm">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
           </svg>
           <span>Tilpass skjerm</span>
-        </button>
-
-        <button class="toolbar-btn" id="btn-send-cad" title="Send Ctrl+Alt+Del eller systemhandling">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
-            <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"></path>
-          </svg>
-          <span>Handling</span>
         </button>
 
         <button class="toolbar-btn btn-danger" id="btn-disconnect" title="Avslutt økt">
@@ -297,8 +331,95 @@
         <button class="btn-primary" id="btn-save-settings">Lagre og koble til</button>
       </div>
     </div>
+
+    <!-- In-Session Drawer (Chat, File Transfer, Clipboard Sync) -->
+    <aside class="session-drawer" id="session-drawer">
+      <div class="drawer-header">
+        <div class="drawer-tabs">
+          <button class="drawer-tab active" data-tab="chat" id="tab-btn-chat">
+            Chat
+            <span class="tab-badge" id="tab-badge-chat" style="display: none;">0</span>
+          </button>
+          <button class="drawer-tab" data-tab="files" id="tab-btn-files">
+            Filer
+          </button>
+          <button class="drawer-tab" data-tab="clipboard" id="tab-btn-clipboard">
+            Utklippstavle
+          </button>
+        </div>
+        <button class="drawer-close" id="btn-close-drawer" title="Lukk panel">&times;</button>
+      </div>
+
+      <!-- Tab 1: Chat -->
+      <div class="drawer-tab-content active" id="tab-content-chat">
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-empty-state">
+            <span class="chat-empty-icon">&#128172;</span>
+            <p>P2P-kryptert support-chat</p>
+            <span style="font-size: 11px; color: var(--text-muted);">Send meldinger direkte under økten.</span>
+          </div>
+        </div>
+        <form class="chat-input-form" id="chat-input-form">
+          <input 
+            type="text" 
+            id="chat-input" 
+            placeholder="Skriv en melding..." 
+            autocomplete="off" 
+            class="chat-input-field"
+          />
+          <button type="submit" class="btn-send-chat" id="btn-send-chat" title="Send melding">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+          </button>
+        </form>
+      </div>
+
+      <!-- Tab 2: File Transfer -->
+      <div class="drawer-tab-content" id="tab-content-files">
+        <div class="file-dropzone" id="file-dropzone">
+          <input type="file" id="file-input-elem" style="display: none;" />
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <p>Dra & slipp fil her, eller <span class="browse-link" id="btn-browse-file">velg fil</span></p>
+          <span class="dropzone-hint">Direkte P2P-overføring via WebRTC</span>
+        </div>
+
+        <div class="files-list" id="files-list">
+          <div class="files-empty" id="files-empty-notice">Ingen filer overført ennå.</div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Clipboard Sync -->
+      <div class="drawer-tab-content" id="tab-content-clipboard">
+        <div class="clipboard-box">
+          <div class="clipboard-header">
+            <span>Siste mottatte utklippstavle</span>
+            <button class="btn-copy-mini" id="btn-copy-received-clip" title="Kopier til min maskin">Kopier</button>
+          </div>
+          <textarea id="clipboard-preview" readonly placeholder="Ingen utklippstavle mottatt ennå..."></textarea>
+        </div>
+
+        <div class="clipboard-actions">
+          <button class="btn-primary" id="btn-send-my-clipboard" style="width: 100%; padding: 12px; font-size: 13px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+            </svg>
+            Send min utklippstavle til partner
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Floating Toast Notification Container -->
+    <div class="toast-container" id="toast-container"></div>
   </div>
 
-  <script type="module" src="app.js?v=2027_v8"></script>
+  <script type="module" src="app.js?v=2027_v9"></script>
 </body>
 </html>

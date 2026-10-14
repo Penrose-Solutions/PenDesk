@@ -12,12 +12,14 @@ export class WebRtcManager {
 
     this.ws = null;
     this.peerConnection = null;
-    this.dataChannel = null;
+    this.controlChannel = null;
+    this.reliableChannel = null;
     this.localStream = null;
     this.iceServers = [];
     this.iceCandidateQueue = [];
     this.activePartnerId = null;
     this.isHost = false;
+    this._incomingFiles = new Map();
 
     this.onStatusChange = options.onStatusChange || (() => {});
     this.onRegistered = options.onRegistered || (() => {});
@@ -26,6 +28,12 @@ export class WebRtcManager {
     this.onDataMessage = options.onDataMessage || (() => {});
     this.onTelemetryUpdate = options.onTelemetryUpdate || (() => {});
     this.onSessionEnded = options.onSessionEnded || (() => {});
+    this.onChatMessage = options.onChatMessage || (() => {});
+    this.onClipboardReceived = options.onClipboardReceived || (() => {});
+    this.onFileTransferStart = options.onFileTransferStart || (() => {});
+    this.onFileTransferProgress = options.onFileTransferProgress || (() => {});
+    this.onFileTransferComplete = options.onFileTransferComplete || (() => {});
+    this.onReliableStateChange = options.onReliableStateChange || (() => {});
 
     this.telemetryInterval = null;
   }
@@ -236,17 +244,35 @@ export class WebRtcManager {
     };
 
     // Create high-speed DataChannel for input events
-    this.dataChannel = this.peerConnection.createDataChannel('pendesk-control', {
+    this.controlChannel = this.peerConnection.createDataChannel('pendesk-control', {
       ordered: true,
       maxPacketLifeTime: 100 // low latency prioritized
     });
 
-    this.dataChannel.onopen = () => {
-      console.log('[WebRTC] DataChannel open for remote control!');
+    this.controlChannel.onopen = () => {
+      console.log('[WebRTC] Control DataChannel open!');
     };
 
-    this.dataChannel.onmessage = (event) => {
+    this.controlChannel.onmessage = (event) => {
       this.onDataMessage(event.data);
+    };
+
+    // Create reliable DataChannel for chat, files, and clipboard
+    this.reliableChannel = this.peerConnection.createDataChannel('pendesk-reliable', {
+      ordered: true
+    });
+
+    this.reliableChannel.onopen = () => {
+      console.log('[WebRTC] Reliable DataChannel open!');
+      this.onReliableStateChange(true);
+    };
+
+    this.reliableChannel.onclose = () => {
+      this.onReliableStateChange(false);
+    };
+
+    this.reliableChannel.onmessage = (event) => {
+      this._handleReliableMessage(event.data);
     };
 
     // Explicitly add recvonly transceivers so SDP offer allocates media lines
@@ -323,12 +349,38 @@ export class WebRtcManager {
       }
     }
 
-    // Host receives data channel from caller
+    // Host receives data channels from caller
     this.peerConnection.ondatachannel = (event) => {
-      this.dataChannel = event.channel;
-      this.dataChannel.onmessage = (msgEvent) => {
-        this.onDataMessage(msgEvent.data);
-      };
+      const ch = event.channel;
+      if (ch.label === 'pendesk-control') {
+        this.controlChannel = ch;
+        ch.onmessage = (msgEvent) => {
+          this.onDataMessage(msgEvent.data);
+        };
+      } else if (ch.label === 'pendesk-reliable') {
+        this.reliableChannel = ch;
+        ch.onopen = () => this.onReliableStateChange(true);
+        ch.onclose = () => this.onReliableStateChange(false);
+        ch.onmessage = (msgEvent) => {
+          this._handleReliableMessage(msgEvent.data);
+        };
+      } else {
+        // Fallback for single generic channel
+        this.controlChannel = ch;
+        this.reliableChannel = ch;
+        ch.onmessage = (msgEvent) => {
+          try {
+            const data = JSON.parse(msgEvent.data);
+            if (['chat', 'clipboard', 'file_start', 'file_chunk', 'file_end'].includes(data.type)) {
+              this._handleReliableMessage(msgEvent.data);
+            } else {
+              this.onDataMessage(msgEvent.data);
+            }
+          } catch {
+            this.onDataMessage(msgEvent.data);
+          }
+        };
+      }
     };
 
     await this.peerConnection.setRemoteDescription(new RTCSessionDescription(sdpOffer));
@@ -363,9 +415,236 @@ export class WebRtcManager {
   }
 
   sendInputEvent(eventData) {
-    if (this.dataChannel && this.dataChannel.readyState === 'open') {
-      this.dataChannel.send(JSON.stringify(eventData));
+    const ch = this.controlChannel || this.reliableChannel;
+    if (ch && ch.readyState === 'open') {
+      ch.send(JSON.stringify(eventData));
     }
+  }
+
+  _handleReliableMessage(rawData) {
+    try {
+      const msg = JSON.parse(rawData);
+      switch (msg.type) {
+        case 'chat': {
+          this.onChatMessage({
+            text: msg.text,
+            senderId: msg.senderId || this.activePartnerId,
+            timestamp: msg.timestamp || Date.now(),
+            isMe: false
+          });
+          break;
+        }
+
+        case 'clipboard': {
+          this.onClipboardReceived(msg.text);
+          break;
+        }
+
+        case 'file_start': {
+          this._incomingFiles.set(msg.fileId, {
+            fileId: msg.fileId,
+            name: msg.name,
+            size: msg.size,
+            mimeType: msg.mimeType,
+            receivedChunks: [],
+            receivedBytes: 0,
+            totalChunks: msg.totalChunks
+          });
+          this.onFileTransferStart({
+            fileId: msg.fileId,
+            name: msg.name,
+            size: msg.size,
+            direction: 'download'
+          });
+          break;
+        }
+
+        case 'file_chunk': {
+          const fileRecord = this._incomingFiles.get(msg.fileId);
+          if (fileRecord) {
+            fileRecord.receivedChunks.push(msg.chunk);
+            fileRecord.receivedBytes += msg.chunkSize;
+            const progress = Math.min(100, Math.round((fileRecord.receivedBytes / fileRecord.size) * 100));
+            this.onFileTransferProgress({
+              fileId: msg.fileId,
+              receivedBytes: fileRecord.receivedBytes,
+              totalBytes: fileRecord.size,
+              progress,
+              direction: 'download'
+            });
+          }
+          break;
+        }
+
+        case 'file_end': {
+          const fileRecord = this._incomingFiles.get(msg.fileId);
+          if (fileRecord) {
+            const byteArrays = fileRecord.receivedChunks.map((b64) => {
+              const bin = atob(b64);
+              const bytes = new Uint8Array(bin.length);
+              for (let i = 0; i < bin.length; i++) {
+                bytes[i] = bin.charCodeAt(i);
+              }
+              return bytes;
+            });
+            const blob = new Blob(byteArrays, { type: fileRecord.mimeType || 'application/octet-stream' });
+            const downloadUrl = URL.createObjectURL(blob);
+            this._incomingFiles.delete(msg.fileId);
+            this.onFileTransferComplete({
+              fileId: msg.fileId,
+              name: fileRecord.name,
+              size: fileRecord.size,
+              blob,
+              downloadUrl,
+              direction: 'download'
+            });
+          }
+          break;
+        }
+      }
+    } catch (e) {
+      console.warn('[WebRTC] Error handling reliable message:', e);
+    }
+  }
+
+  sendChatMessage(text) {
+    const ch = this.reliableChannel || this.controlChannel;
+    if (ch && ch.readyState === 'open') {
+      const payload = {
+        type: 'chat',
+        text,
+        timestamp: Date.now(),
+        senderId: this.clientId
+      };
+      ch.send(JSON.stringify(payload));
+      return payload;
+    } else {
+      throw new Error('Chat-kanalen er ikke tilkoblet.');
+    }
+  }
+
+  sendClipboard(text) {
+    const ch = this.reliableChannel || this.controlChannel;
+    if (ch && ch.readyState === 'open') {
+      ch.send(
+        JSON.stringify({
+          type: 'clipboard',
+          text
+        })
+      );
+    }
+  }
+
+  async sendFile(file, onProgress) {
+    const ch = this.reliableChannel || this.controlChannel;
+    if (!ch || ch.readyState !== 'open') {
+      throw new Error('Datakanalen er ikke tilkoblet for filoverføring.');
+    }
+
+    const fileId = Math.random().toString(36).substring(2, 9);
+    const CHUNK_SIZE = 16384; // 16 KB safe chunk size
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+    ch.send(
+      JSON.stringify({
+        type: 'file_start',
+        fileId,
+        name: file.name,
+        size: file.size,
+        mimeType: file.type || 'application/octet-stream',
+        totalChunks
+      })
+    );
+
+    let offset = 0;
+    let chunkIndex = 0;
+
+    const readChunk = (start, end) => {
+      return new Promise((resolve, reject) => {
+        const slice = file.slice(start, end);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const bytes = new Uint8Array(e.target.result);
+          let binary = '';
+          const len = bytes.byteLength;
+          for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          const base64 = btoa(binary);
+          resolve({ base64, size: len });
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(slice);
+      });
+    };
+
+    while (offset < file.size) {
+      if (ch.bufferedAmount > 256 * 1024) {
+        await new Promise((resolve) => {
+          const onLow = () => {
+            ch.removeEventListener('bufferedamountlow', onLow);
+            resolve();
+          };
+          ch.addEventListener('bufferedamountlow', onLow);
+        });
+      }
+
+      const end = Math.min(offset + CHUNK_SIZE, file.size);
+      const { base64, size } = await readChunk(offset, end);
+
+      ch.send(
+        JSON.stringify({
+          type: 'file_chunk',
+          fileId,
+          chunkIndex,
+          chunkSize: size,
+          chunk: base64
+        })
+      );
+
+      offset += size;
+      chunkIndex++;
+
+      const progress = Math.min(100, Math.round((offset / file.size) * 100));
+      if (onProgress) {
+        onProgress({ fileId, offset, total: file.size, progress });
+      }
+    }
+
+    ch.send(
+      JSON.stringify({
+        type: 'file_end',
+        fileId
+      })
+    );
+
+    return { fileId, name: file.name, size: file.size };
+  }
+
+  async replaceMediaStream(newStream) {
+    if (!this.peerConnection) return;
+    const newTrack = newStream.getVideoTracks()[0];
+    if (!newTrack) return;
+
+    const senders = this.peerConnection.getSenders();
+    const videoSender = senders.find((s) => s.track && s.track.kind === 'video');
+
+    if (videoSender) {
+      await videoSender.replaceTrack(newTrack);
+    }
+
+    if (this.localStream) {
+      this.localStream.getVideoTracks().forEach((t) => {
+        t.onended = null;
+        t.stop();
+      });
+    }
+
+    this.localStream = newStream;
+    newTrack.onended = () => {
+      console.log('[WebRTC] Switched display track ended by user');
+      this.disconnectSession('Skjermdeling ble stoppet av verten.');
+    };
   }
 
   disconnectSession(reason = 'Økten ble avsluttet.') {
@@ -404,10 +683,15 @@ export class WebRtcManager {
       }
       this.localStream = null;
     }
-    if (this.dataChannel) {
-      try { this.dataChannel.close(); } catch {}
-      this.dataChannel = null;
+    if (this.controlChannel) {
+      try { this.controlChannel.close(); } catch {}
+      this.controlChannel = null;
     }
+    if (this.reliableChannel) {
+      try { this.reliableChannel.close(); } catch {}
+      this.reliableChannel = null;
+    }
+    this._incomingFiles.clear();
     if (this.peerConnection) {
       try {
         this.peerConnection.onconnectionstatechange = null;

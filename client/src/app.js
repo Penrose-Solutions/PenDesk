@@ -58,7 +58,10 @@ const state = {
   localPasscode: generateRandomPasscode(),
   signalingUrl: resolveSignalingUrl(),
   recentConnections: JSON.parse((typeof localStorage !== 'undefined' && localStorage.getItem('pendesk_recent')) || '[]'),
-  inSession: false
+  inSession: false,
+  unreadChat: 0,
+  isDrawerOpen: false,
+  activeDrawerTab: 'chat'
 };
 
 // DOM References
@@ -99,12 +102,218 @@ const elStreamPlaceholder = document.getElementById('stream-placeholder');
 const elHostSessionBanner = document.getElementById('host-session-banner');
 const elHostSessionText = document.getElementById('host-session-text');
 const elBtnHostDisconnect = document.getElementById('btn-host-disconnect');
+const elBtnHostToggleDrawer = document.getElementById('btn-host-toggle-drawer');
+const elBtnHostSwitchScreen = document.getElementById('btn-host-switch-screen');
+const elHostChatUnreadBadge = document.getElementById('host-chat-unread-badge');
+
+const elSessionDrawer = document.getElementById('session-drawer');
+const elBtnCloseDrawer = document.getElementById('btn-close-drawer');
+const elTabBtnChat = document.getElementById('tab-btn-chat');
+const elTabBtnFiles = document.getElementById('tab-btn-files');
+const elTabBtnClipboard = document.getElementById('tab-btn-clipboard');
+const elTabContentChat = document.getElementById('tab-content-chat');
+const elTabContentFiles = document.getElementById('tab-content-files');
+const elTabContentClipboard = document.getElementById('tab-content-clipboard');
+const elChatMessages = document.getElementById('chat-messages');
+const elChatInputForm = document.getElementById('chat-input-form');
+const elChatInput = document.getElementById('chat-input');
+const elChatUnreadBadge = document.getElementById('chat-unread-badge');
+const elBtnToggleChat = document.getElementById('btn-toggle-chat');
+const elBtnToggleFiles = document.getElementById('btn-toggle-files');
+const elBtnToggleClipboard = document.getElementById('btn-toggle-clipboard');
+const elFileDropzone = document.getElementById('file-dropzone');
+const elFileInputElem = document.getElementById('file-input-elem');
+const elBtnBrowseFile = document.getElementById('btn-browse-file');
+const elFilesList = document.getElementById('files-list');
+const elFilesEmptyNotice = document.getElementById('files-empty-notice');
+const elClipboardPreview = document.getElementById('clipboard-preview');
+const elBtnCopyReceivedClip = document.getElementById('btn-copy-received-clip');
+const elBtnSendMyClipboard = document.getElementById('btn-send-my-clipboard');
+const elToastContainer = document.getElementById('toast-container');
 
 async function invokeTauri(cmd, args = {}) {
   if (isTauri && window.__TAURI__.core) {
     return await window.__TAURI__.core.invoke(cmd, args);
   }
   return null;
+}
+
+// Toast Notifications System
+function showToast(message, type = 'info', duration = 3500) {
+  if (!elToastContainer) return;
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  elToastContainer.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-20px)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
+// Synthetic Notification Audio Chime (Web Audio API)
+function playNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.2);
+  } catch (e) {}
+}
+
+// Drawer Controls
+function openDrawer(tabName = 'chat') {
+  if (!elSessionDrawer) return;
+  elSessionDrawer.classList.add('active');
+  state.isDrawerOpen = true;
+  switchDrawerTab(tabName);
+}
+
+function closeDrawer() {
+  if (!elSessionDrawer) return;
+  elSessionDrawer.classList.remove('active');
+  state.isDrawerOpen = false;
+}
+
+function switchDrawerTab(tabName) {
+  state.activeDrawerTab = tabName;
+  [elTabBtnChat, elTabBtnFiles, elTabBtnClipboard].forEach((btn) => {
+    if (btn) btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+  if (elTabContentChat) elTabContentChat.classList.toggle('active', tabName === 'chat');
+  if (elTabContentFiles) elTabContentFiles.classList.toggle('active', tabName === 'files');
+  if (elTabContentClipboard) elTabContentClipboard.classList.toggle('active', tabName === 'clipboard');
+  if (tabName === 'chat') {
+    state.unreadChat = 0;
+    updateUnreadBadges();
+    if (elChatInput) elChatInput.focus();
+  }
+}
+
+function updateUnreadBadges() {
+  const display = state.unreadChat > 0 ? 'inline-flex' : 'none';
+  const text = state.unreadChat > 9 ? '9+' : String(state.unreadChat);
+  if (elChatUnreadBadge) {
+    elChatUnreadBadge.style.display = display;
+    elChatUnreadBadge.textContent = text;
+  }
+  if (elHostChatUnreadBadge) {
+    elHostChatUnreadBadge.style.display = display;
+    elHostChatUnreadBadge.textContent = text;
+  }
+}
+
+// Chat Messages Rendering
+function appendChatMessage({ text, timestamp, isMe, senderId }) {
+  if (!elChatMessages) return;
+  const empty = elChatMessages.querySelector('.chat-empty-state');
+  if (empty) empty.remove();
+
+  const bubble = document.createElement('div');
+  bubble.className = `chat-bubble ${isMe ? 'mine' : 'partner'}`;
+
+  const textEl = document.createElement('div');
+  textEl.textContent = text;
+  bubble.appendChild(textEl);
+
+  const metaEl = document.createElement('div');
+  metaEl.className = 'chat-meta';
+  const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  metaEl.textContent = isMe ? timeStr : `${senderId ? senderId.slice(0, 7) + '.. ' : ''}${timeStr}`;
+  bubble.appendChild(metaEl);
+
+  elChatMessages.appendChild(bubble);
+  elChatMessages.scrollTop = elChatMessages.scrollHeight;
+}
+
+// File Transfer Cards Handling
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function createFileCard({ fileId, name, size, direction }) {
+  if (elFilesEmptyNotice) elFilesEmptyNotice.style.display = 'none';
+  const card = document.createElement('div');
+  card.className = 'file-card';
+  card.id = `file-card-${fileId}`;
+
+  card.innerHTML = `
+    <div class="file-card-header">
+      <span class="file-name" title="${name}">${name}</span>
+      <span class="file-size">${formatBytes(size)}</span>
+    </div>
+    <div class="file-progress-bar-wrap">
+      <div class="file-progress-bar" id="prog-${fileId}"></div>
+    </div>
+    <div class="file-card-footer">
+      <span id="status-${fileId}">${direction === 'upload' ? 'Sender...' : 'Mottar...'} 0%</span>
+      <span id="action-${fileId}"></span>
+    </div>
+  `;
+
+  if (elFilesList) elFilesList.prepend(card);
+  return card;
+}
+
+function updateFileProgress({ fileId, progress, offset, total }) {
+  const bar = document.getElementById(`prog-${fileId}`);
+  const status = document.getElementById(`status-${fileId}`);
+  if (bar) bar.style.width = `${progress}%`;
+  if (status) status.textContent = `${progress}% (${formatBytes(offset || 0)} / ${formatBytes(total)})`;
+}
+
+function completeFileTransfer({ fileId, name, size, downloadUrl, direction }) {
+  const bar = document.getElementById(`prog-${fileId}`);
+  const status = document.getElementById(`status-${fileId}`);
+  const action = document.getElementById(`action-${fileId}`);
+  if (bar) bar.style.width = '100%';
+  if (status) {
+    status.textContent = direction === 'upload' ? 'Fullført' : 'Mottatt';
+    status.style.color = 'var(--accent-success)';
+  }
+  if (action && downloadUrl) {
+    action.innerHTML = `
+      <a href="${downloadUrl}" download="${name}" class="btn-download-file">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Last ned
+      </a>
+    `;
+  }
+}
+
+async function handleFilesSelected(files) {
+  if (!files || files.length === 0) return;
+  for (const file of files) {
+    const fileId = Math.random().toString(36).substring(2, 9);
+    createFileCard({ fileId, name: file.name, size: file.size, direction: 'upload' });
+    try {
+      showToast(`Starter sending: ${file.name}`, 'info');
+      await rtc.sendFile(file, ({ offset, total, progress }) => {
+        updateFileProgress({ fileId, progress, offset, total });
+      });
+      completeFileTransfer({ fileId, name: file.name, size: file.size, direction: 'upload' });
+      showToast(`Fil sendt: ${file.name}`, 'success');
+      playNotificationSound();
+    } catch (err) {
+      alert('Feil ved filoverføring: ' + err.message);
+    }
+  }
 }
 
 // Initialize WebRTC Manager
@@ -221,6 +430,46 @@ const rtc = new WebRtcManager({
     if (elStatFps) elStatFps.textContent = `${fps} FPS`;
   },
 
+  onChatMessage: (msg) => {
+    appendChatMessage(msg);
+    playNotificationSound();
+    if (!state.isDrawerOpen || state.activeDrawerTab !== 'chat') {
+      state.unreadChat++;
+      updateUnreadBadges();
+      showToast(`Ny melding fra partner: ${msg.text.slice(0, 32)}...`, 'info');
+    }
+  },
+
+  onClipboardReceived: (text) => {
+    if (elClipboardPreview) elClipboardPreview.value = text;
+    showToast('Utklippstavle mottatt fra partner', 'success');
+    playNotificationSound();
+    try {
+      navigator.clipboard.writeText(text).catch(() => {});
+    } catch {}
+  },
+
+  onFileTransferStart: (fileInfo) => {
+    createFileCard(fileInfo);
+    showToast(`Mottar fil: ${fileInfo.name}`, 'info');
+    openDrawer('files');
+  },
+
+  onFileTransferProgress: (progressInfo) => {
+    updateFileProgress({
+      fileId: progressInfo.fileId,
+      progress: progressInfo.progress,
+      offset: progressInfo.receivedBytes,
+      total: progressInfo.totalBytes
+    });
+  },
+
+  onFileTransferComplete: (completedFile) => {
+    completeFileTransfer(completedFile);
+    playNotificationSound();
+    showToast(`Fil mottatt: ${completedFile.name}`, 'success');
+  },
+
   onSessionEnded: (reason) => {
     if (elSessionOverlay) elSessionOverlay.classList.remove('active');
     if (elHostSessionBanner) elHostSessionBanner.style.display = 'none';
@@ -230,6 +479,7 @@ const rtc = new WebRtcManager({
       elRemoteVideo.srcObject = null;
     }
     state.inSession = false;
+    closeDrawer();
 
     // Reset connect button in Card 2
     if (elBtnConnectText) elBtnConnectText.textContent = 'Koble til enhet';
@@ -344,6 +594,169 @@ function setupEventListeners() {
       e.stopPropagation();
       console.log('[PenDesk] Host disconnect clicked');
       rtc.disconnectSession('Verten avsluttet fjernstyringen.');
+    });
+  }
+
+  // Host Dynamic Display Switcher
+  if (elBtnHostSwitchScreen) {
+    elBtnHostSwitchScreen.addEventListener('click', async (e) => {
+      e.preventDefault();
+      try {
+        const newStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: { ideal: 60, max: 60 }, cursor: 'always' },
+          audio: false
+        });
+        await rtc.replaceMediaStream(newStream);
+        showToast('Skjermkilde ble oppdatert!', 'success');
+        playNotificationSound();
+      } catch (err) {
+        if (err.name !== 'NotAllowedError') {
+          alert('Kunne ikke bytte skjerm: ' + err.message);
+        }
+      }
+    });
+  }
+
+  // Drawer Toggles & Navigation
+  if (elBtnCloseDrawer) {
+    elBtnCloseDrawer.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeDrawer();
+    });
+  }
+
+  if (elBtnToggleChat) {
+    elBtnToggleChat.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (state.isDrawerOpen && state.activeDrawerTab === 'chat') {
+        closeDrawer();
+      } else {
+        openDrawer('chat');
+      }
+    });
+  }
+
+  if (elBtnToggleFiles) {
+    elBtnToggleFiles.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (state.isDrawerOpen && state.activeDrawerTab === 'files') {
+        closeDrawer();
+      } else {
+        openDrawer('files');
+      }
+    });
+  }
+
+  if (elBtnToggleClipboard) {
+    elBtnToggleClipboard.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (state.isDrawerOpen && state.activeDrawerTab === 'clipboard') {
+        closeDrawer();
+      } else {
+        openDrawer('clipboard');
+      }
+    });
+  }
+
+  if (elBtnHostToggleDrawer) {
+    elBtnHostToggleDrawer.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (state.isDrawerOpen) {
+        closeDrawer();
+      } else {
+        openDrawer('chat');
+      }
+    });
+  }
+
+  if (elTabBtnChat) {
+    elTabBtnChat.addEventListener('click', () => switchDrawerTab('chat'));
+  }
+  if (elTabBtnFiles) {
+    elTabBtnFiles.addEventListener('click', () => switchDrawerTab('files'));
+  }
+  if (elTabBtnClipboard) {
+    elTabBtnClipboard.addEventListener('click', () => switchDrawerTab('clipboard'));
+  }
+
+  // Chat Form Submission
+  if (elChatInputForm) {
+    elChatInputForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = (elChatInput ? elChatInput.value : '').trim();
+      if (!text) return;
+      try {
+        const payload = rtc.sendChatMessage(text);
+        appendChatMessage({ ...payload, isMe: true });
+        if (elChatInput) elChatInput.value = '';
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
+
+  // File Transfer Handlers
+  if (elBtnBrowseFile && elFileInputElem) {
+    elBtnBrowseFile.addEventListener('click', (e) => {
+      e.preventDefault();
+      elFileInputElem.click();
+    });
+  }
+
+  if (elFileInputElem) {
+    elFileInputElem.addEventListener('change', (e) => {
+      handleFilesSelected(e.target.files);
+      e.target.value = '';
+    });
+  }
+
+  if (elFileDropzone) {
+    elFileDropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      elFileDropzone.classList.add('dragover');
+    });
+    elFileDropzone.addEventListener('dragleave', () => {
+      elFileDropzone.classList.remove('dragover');
+    });
+    elFileDropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      elFileDropzone.classList.remove('dragover');
+      if (e.dataTransfer && e.dataTransfer.files) {
+        handleFilesSelected(e.dataTransfer.files);
+      }
+    });
+  }
+
+  // Clipboard Sync Handlers
+  if (elBtnSendMyClipboard) {
+    elBtnSendMyClipboard.addEventListener('click', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (!text) {
+          alert('Utklippstavlen din er tom.');
+          return;
+        }
+        rtc.sendClipboard(text);
+        if (elClipboardPreview) elClipboardPreview.value = text;
+        showToast('Utklippstavle sendt til partner!', 'success');
+        playNotificationSound();
+      } catch (err) {
+        alert('Nettleseren blokkerte tilgang til utklippstavlen. Vennligst lim inn manuelt.');
+      }
+    });
+  }
+
+  if (elBtnCopyReceivedClip && elClipboardPreview) {
+    elBtnCopyReceivedClip.addEventListener('click', () => {
+      const text = elClipboardPreview.value;
+      if (text) {
+        navigator.clipboard.writeText(text);
+        showToast('Kopiert til din utklippstavle!', 'success');
+        playNotificationSound();
+      }
     });
   }
 
