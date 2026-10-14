@@ -1,6 +1,8 @@
 import http from 'node:http';
 import crypto from 'node:crypto';
 import { WebSocketServer } from './websocket.js';
+import { db } from './db.js';
+import { hashPassword, verifyPassword, createToken, verifyToken } from './auth.js';
 
 const PORT = parseInt(process.env.PORT || '8080', 10);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -52,13 +54,42 @@ function getIceServers(clientId) {
   ];
 }
 
+function parseJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+      if (body.length > 1e6) {
+        req.destroy();
+        reject(new Error('Payload for stor'));
+      }
+    });
+    req.on('end', () => {
+      if (!body) return resolve({});
+      try {
+        resolve(JSON.parse(body));
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on('error', reject);
+  });
+}
+
+function getAuthUser(req) {
+  const authHeader = req.headers['authorization'] || '';
+  if (!authHeader.startsWith('Bearer ')) return null;
+  const token = authHeader.slice(7).trim();
+  return verifyToken(token);
+}
+
 // HTTP Server
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
@@ -112,6 +143,224 @@ const server = http.createServer((req, res) => {
         online: isOnline
       })
     );
+    return;
+  }
+
+  // ==========================================
+  // AUTH API: Register
+  // ==========================================
+  if (url.pathname === '/api/auth/register' && req.method === 'POST') {
+    try {
+      const { email, password, name } = await parseJsonBody(req);
+      if (!email || !password || !name) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Navn, e-post og passord er påkrevd.' }));
+        return;
+      }
+      if (password.length < 6) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Passordet må ha minst 6 tegn.' }));
+        return;
+      }
+
+      const cleanEmail = email.toLowerCase().trim();
+      const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(cleanEmail);
+      if (existing) {
+        res.writeHead(409, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'En bruker med denne e-postadressen finnes allerede.' }));
+        return;
+      }
+
+      const { hash, salt } = hashPassword(password);
+      const userId = crypto.randomUUID();
+      db.prepare(`
+        INSERT INTO users (id, email, password_hash, salt, name)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(userId, cleanEmail, hash, salt, name.trim());
+
+      const token = createToken({ userId, email: cleanEmail, name: name.trim() });
+      res.writeHead(201, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        token,
+        user: { id: userId, email: cleanEmail, name: name.trim() }
+      }));
+    } catch (err) {
+      console.error('[API] Register error:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Intern serverfeil ved registrering.' }));
+    }
+    return;
+  }
+
+  // ==========================================
+  // AUTH API: Login
+  // ==========================================
+  if (url.pathname === '/api/auth/login' && req.method === 'POST') {
+    try {
+      const { email, password } = await parseJsonBody(req);
+      if (!email || !password) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'E-post og passord er påkrevd.' }));
+        return;
+      }
+
+      const cleanEmail = email.toLowerCase().trim();
+      const user = db.prepare('SELECT id, email, password_hash, salt, name FROM users WHERE email = ?').get(cleanEmail);
+      if (!user || !verifyPassword(password, user.password_hash, user.salt)) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Ugyldig e-post eller passord.' }));
+        return;
+      }
+
+      const token = createToken({ userId: user.id, email: user.email, name: user.name });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        token,
+        user: { id: user.id, email: user.email, name: user.name }
+      }));
+    } catch (err) {
+      console.error('[API] Login error:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Intern serverfeil ved innlogging.' }));
+    }
+    return;
+  }
+
+  // ==========================================
+  // AUTH API: Current User Profile (me)
+  // ==========================================
+  if (url.pathname === '/api/auth/me' && req.method === 'GET') {
+    const authUser = getAuthUser(req);
+    if (!authUser) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Uautorisert.' }));
+      return;
+    }
+    const user = db.prepare('SELECT id, email, name, created_at FROM users WHERE id = ?').get(authUser.userId);
+    if (!user) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Bruker ikke funnet.' }));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ user }));
+    return;
+  }
+
+  // ==========================================
+  // DEVICES API: List My Devices
+  // ==========================================
+  if (url.pathname === '/api/devices' && req.method === 'GET') {
+    const authUser = getAuthUser(req);
+    if (!authUser) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Uautorisert.' }));
+      return;
+    }
+    const rows = db.prepare(`
+      SELECT id, device_id, alias, platform, permanent_password, created_at, last_seen
+      FROM devices
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `).all(authUser.userId);
+
+    const devices = rows.map((row) => ({
+      id: row.id,
+      deviceId: row.device_id,
+      alias: row.alias,
+      platform: row.platform,
+      hasPermanentPassword: !!row.permanent_password,
+      permanentPassword: row.permanent_password || '',
+      isOnline: peers.has(row.device_id),
+      createdAt: row.created_at,
+      lastSeen: row.last_seen
+    }));
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ devices }));
+    return;
+  }
+
+  // ==========================================
+  // DEVICES API: Add or Update Device
+  // ==========================================
+  if (url.pathname === '/api/devices' && req.method === 'POST') {
+    const authUser = getAuthUser(req);
+    if (!authUser) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Uautorisert.' }));
+      return;
+    }
+    try {
+      const { deviceId, alias, platform, permanentPassword } = await parseJsonBody(req);
+      if (!deviceId || !alias) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Enhets-ID og maskinnavn er påkrevd.' }));
+        return;
+      }
+
+      const cleanDeviceId = deviceId.replace(/\s+/g, ' ').trim();
+      const existing = db.prepare('SELECT id FROM devices WHERE user_id = ? AND device_id = ?').get(authUser.userId, cleanDeviceId);
+
+      if (existing) {
+        db.prepare(`
+          UPDATE devices
+          SET alias = ?, platform = ?, permanent_password = ?
+          WHERE id = ?
+        `).run(alias.trim(), platform || 'generic', permanentPassword || null, existing.id);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          status: 'updated',
+          device: {
+            id: existing.id,
+            deviceId: cleanDeviceId,
+            alias: alias.trim(),
+            platform: platform || 'generic',
+            hasPermanentPassword: !!permanentPassword,
+            isOnline: peers.has(cleanDeviceId)
+          }
+        }));
+      } else {
+        const id = crypto.randomUUID();
+        db.prepare(`
+          INSERT INTO devices (id, user_id, device_id, alias, platform, permanent_password)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(id, authUser.userId, cleanDeviceId, alias.trim(), platform || 'generic', permanentPassword || null);
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          status: 'created',
+          device: {
+            id,
+            deviceId: cleanDeviceId,
+            alias: alias.trim(),
+            platform: platform || 'generic',
+            hasPermanentPassword: !!permanentPassword,
+            isOnline: peers.has(cleanDeviceId)
+          }
+        }));
+      }
+    } catch (err) {
+      console.error('[API] Add device error:', err);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Kunne ikke lagre enhet.' }));
+    }
+    return;
+  }
+
+  // ==========================================
+  // DEVICES API: Delete Device
+  // ==========================================
+  if (url.pathname.startsWith('/api/devices/') && req.method === 'DELETE') {
+    const authUser = getAuthUser(req);
+    if (!authUser) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Uautorisert.' }));
+      return;
+    }
+    const id = url.pathname.replace('/api/devices/', '').trim();
+    db.prepare('DELETE FROM devices WHERE id = ? AND user_id = ?').run(id, authUser.userId);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'deleted', id }));
     return;
   }
 
@@ -170,11 +419,18 @@ wss.on('connection', (ws) => {
           ws,
           clientId: cleanId,
           password: msg.password || '',
+          permanentPassword: (msg.permanentPassword || '').trim(),
+          allowUnattended: Boolean(msg.allowUnattended),
           deviceName: msg.deviceName || 'PenDesk Client',
+          platform: msg.platform || 'generic',
           connectedAt: new Date().toISOString()
         });
 
-        console.log(`[Signaling] Peer registered: ${cleanId} (${msg.deviceName})`);
+        try {
+          db.prepare('UPDATE devices SET last_seen = CURRENT_TIMESTAMP WHERE device_id = ?').run(cleanId);
+        } catch {}
+
+        console.log(`[Signaling] Peer registered: ${cleanId} (${msg.deviceName}) unattended=${Boolean(msg.allowUnattended)}`);
 
         send({
           type: 'registered',
@@ -215,18 +471,21 @@ wss.on('connection', (ws) => {
           return;
         }
 
-        // Validate password if host requires one
-        if (target.password && target.password !== msg.password) {
+        // Validate password against one-time passcode OR permanent unattended password
+        const isOtpMatch = target.password && target.password === msg.password;
+        const isPermMatch = target.allowUnattended && target.permanentPassword && target.permanentPassword === msg.password;
+
+        if (target.password && !isOtpMatch && !isPermMatch) {
           send({
             type: 'dial_response',
             targetId,
             success: false,
-            reason: 'Feil engangskode for fjernstyring.'
+            reason: 'Feil passord for fjernstyring.'
           });
           return;
         }
 
-        console.log(`[Signaling] Dial: ${currentClientId} -> ${targetId}`);
+        console.log(`[Signaling] Dial: ${currentClientId} -> ${targetId} (unattended=${isPermMatch})`);
 
         // Forward connection offer to target host
         target.ws.send(
@@ -234,7 +493,8 @@ wss.on('connection', (ws) => {
             type: 'incoming_connection',
             fromId: currentClientId,
             deviceName: msg.deviceName || 'Fjernhjelp Operatør',
-            sdpOffer: msg.sdpOffer
+            sdpOffer: msg.sdpOffer,
+            unattended: isPermMatch
           })
         );
         break;

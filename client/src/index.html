@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="style.css?v=2027_v9" />
+  <link rel="stylesheet" href="style.css?v=2027_v10" />
 </head>
 <body>
   <div id="app">
@@ -21,11 +21,20 @@
       </div>
 
       <nav class="nav-group">
-        <button class="nav-item active" id="nav-remote" title="Fjernstyring">
+        <button class="nav-item active" id="nav-remote" title="Fjernstyring (Skrivebord)">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="2" y="3" width="20" height="14" rx="2"></rect>
             <line x1="8" y1="21" x2="16" y2="21"></line>
             <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+        </button>
+
+        <button class="nav-item" id="nav-devices" title="Mine enheter (Dashboard)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+            <line x1="6" y1="18" x2="6.01" y2="18"></line>
           </svg>
         </button>
 
@@ -41,7 +50,7 @@
         <button class="nav-item" id="btn-open-settings" title="Nettverks- og VPS-innstillinger">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
         </button>
       </div>
@@ -52,13 +61,24 @@
       <!-- Top Header -->
       <header class="top-bar">
         <div class="app-title-group">
-          <h1>Penrose Fjernhjelp</h1>
+          <h1 id="view-title">Penrose Fjernhjelp</h1>
           <p id="vps-connection-label">VPS: hjelp.penrose.no</p>
         </div>
 
-        <div class="status-pill connecting" id="status-pill">
-          <span class="status-dot"></span>
-          <span id="status-text">Kobler til server...</span>
+        <div class="header-right-group">
+          <!-- Auth / Profile Pill Button -->
+          <button class="btn-auth-user" id="btn-auth-user" title="Min Penrose-konto">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span id="auth-user-label">Logg inn</span>
+          </button>
+
+          <div class="status-pill connecting" id="status-pill">
+            <span class="status-dot"></span>
+            <span id="status-text">Kobler til server...</span>
+          </div>
         </div>
       </header>
 
@@ -103,119 +123,217 @@
         </div>
       </div>
 
-      <!-- Dual Desk Panel -->
-      <div class="desk-grid">
-        <!-- Card 1: Allow Remote Control (Host) -->
-        <section class="desk-card">
-          <div class="card-header">
-            <div class="card-icon-wrap">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              </svg>
-            </div>
-            <div>
-              <h2>Denne enheten</h2>
-              <p>Oppgi ID og engangskode for å motta fjernhjelp</p>
-            </div>
-          </div>
-
-          <!-- Local Desk ID -->
-          <div class="credential-block">
-            <span class="credential-label">Din Penrose-ID</span>
-            <div class="id-display-box">
-              <span class="id-digits" id="local-desk-id">--- --- ---</span>
-              <div class="credential-actions">
-                <button class="btn-icon-copy" id="btn-copy-id" title="Kopier ID">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
-                </button>
+      <!-- View 1: Dual Desk Panel (Fjernhjelp / Skrivebord) -->
+      <div class="app-view active" id="view-desk">
+        <div class="desk-grid">
+          <!-- Card 1: Allow Remote Control (Host) -->
+          <section class="desk-card">
+            <div class="card-header">
+              <div class="card-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+              </div>
+              <div>
+                <h2>Denne enheten</h2>
+                <p>Oppgi ID og engangskode for å motta fjernhjelp</p>
               </div>
             </div>
-          </div>
 
-          <!-- One-Time Session Password -->
-          <div class="credential-block">
-            <span class="credential-label">Engangskode</span>
-            <div class="id-display-box">
-              <span class="id-digits" id="local-passcode" style="font-size: 20px;">------</span>
-              <div class="credential-actions">
-                <button class="btn-icon-copy" id="btn-refresh-pass" title="Generer ny kode">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-                  </svg>
-                </button>
-                <button class="btn-icon-copy" id="btn-copy-pass" title="Kopier kode">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
-                </button>
+            <!-- Local Desk ID -->
+            <div class="credential-block">
+              <span class="credential-label">Din Penrose-ID</span>
+              <div class="id-display-box">
+                <span class="id-digits" id="local-desk-id">--- --- ---</span>
+                <div class="credential-actions">
+                  <button class="btn-icon-copy" id="btn-copy-id" title="Kopier ID">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
 
-        <!-- Card 2: Control Remote Desk (Operator) -->
-        <section class="desk-card">
-          <div class="card-header">
-            <div class="card-icon-wrap">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polygon points="10 8 16 12 10 16 10 8"></polygon>
+            <!-- One-Time Session Password -->
+            <div class="credential-block">
+              <span class="credential-label">Engangskode</span>
+              <div class="id-display-box">
+                <span class="id-digits" id="local-passcode" style="font-size: 20px;">------</span>
+                <div class="credential-actions">
+                  <button class="btn-icon-copy" id="btn-refresh-pass" title="Generer ny kode">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="23 4 23 10 17 10"></polyline>
+                      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                  </button>
+                  <button class="btn-icon-copy" id="btn-copy-pass" title="Kopier kode">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Unattended Access Section -->
+            <div class="unattended-section">
+              <div class="unattended-toggle-row">
+                <label class="switch-wrap" for="toggle-unattended">
+                  <input type="checkbox" id="toggle-unattended" />
+                  <span class="switch-slider"></span>
+                </label>
+                <div class="unattended-text">
+                  <span class="unattended-title">Uovervåket tilgang</span>
+                  <span class="unattended-sub">Tillat tilkobling med fast passord</span>
+                </div>
+              </div>
+
+              <div class="unattended-inputs" id="unattended-inputs" style="display: none;">
+                <label class="credential-label" for="unattended-pass-input">Permanent passord for denne maskinen</label>
+                <div class="password-input-wrap">
+                  <input 
+                    type="password" 
+                    id="unattended-pass-input" 
+                    class="input-field" 
+                    placeholder="Angi permanent passord..." 
+                    autocomplete="new-password"
+                  />
+                  <button class="btn-toggle-show-pass" id="btn-toggle-unattended-pass" type="button" title="Vis/skjul passord">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+                </div>
+                <div class="unattended-hint-row">
+                  <span class="unattended-hint">Fjernstyr uten at noen må godkjenne lokalt.</span>
+                  <button class="btn-save-mini" id="btn-save-unattended">Lagre</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Card 2: Control Remote Desk (Operator) -->
+          <section class="desk-card">
+            <div class="card-header">
+              <div class="card-icon-wrap">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polygon points="10 8 16 12 10 16 10 8"></polygon>
+                </svg>
+              </div>
+              <div>
+                <h2>Fjernstyr enhet</h2>
+                <p>Tast inn partnerens ID for å starte økten</p>
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label class="credential-label" for="remote-id-input">Partnerens ID</label>
+              <input 
+                type="text" 
+                id="remote-id-input" 
+                class="input-field" 
+                placeholder="f.eks. 582 194 301" 
+                maxlength="11" 
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="input-group">
+              <label class="credential-label" for="remote-pass-input">Passord eller engangskode</label>
+              <input 
+                type="password" 
+                id="remote-pass-input" 
+                class="input-field" 
+                placeholder="Skriv inn passord eller kode" 
+                autocomplete="off"
+              />
+            </div>
+
+            <button class="btn-connect" id="btn-connect">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14"></path>
+                <path d="M12 5l7 7-7 7"></path>
               </svg>
-            </div>
-            <div>
-              <h2>Fjernstyr enhet</h2>
-              <p>Tast inn partnerens ID for å starte økten</p>
-            </div>
-          </div>
+              <span id="btn-connect-text">Koble til enhet</span>
+            </button>
+          </section>
+        </div>
 
-          <div class="input-group">
-            <label class="credential-label" for="remote-id-input">Partnerens ID</label>
-            <input 
-              type="text" 
-              id="remote-id-input" 
-              class="input-field" 
-              placeholder="f.eks. 582 194 301" 
-              maxlength="11" 
-              autocomplete="off"
-            />
+        <!-- Recent Connections -->
+        <section class="recent-sessions">
+          <div class="recent-sessions-header">
+            <h3>Nylige tilkoblinger</h3>
+            <span style="font-size: 11px; color: var(--text-muted);" id="recent-count">0 lagret</span>
           </div>
-
-          <div class="input-group">
-            <label class="credential-label" for="remote-pass-input">Engangskode</label>
-            <input 
-              type="password" 
-              id="remote-pass-input" 
-              class="input-field" 
-              placeholder="Skriv inn partnerens kode" 
-              autocomplete="off"
-            />
+          <div class="session-chips-list" id="recent-chips-list">
+            <span style="font-size: 12px; color: var(--text-muted);">Ingen nylige økter ennå. Enheter du har koblet til vises her.</span>
           </div>
-
-          <button class="btn-connect" id="btn-connect">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M5 12h14"></path>
-              <path d="M12 5l7 7-7 7"></path>
-            </svg>
-            <span id="btn-connect-text">Koble til enhet</span>
-          </button>
         </section>
       </div>
 
-      <!-- Recent Connections -->
-      <section class="recent-sessions">
-        <div class="recent-sessions-header">
-          <h3>Nylige tilkoblinger</h3>
-          <span style="font-size: 11px; color: var(--text-muted);" id="recent-count">0 lagret</span>
+      <!-- View 2: Mine Enheter (Address Book & Device Management) -->
+      <div class="app-view" id="view-devices" style="display: none;">
+        <div class="devices-view-header">
+          <div>
+            <h2>Mine Enheter</h2>
+            <p id="devices-sub-title">Oversikt over registrerte maskiner og servere.</p>
+          </div>
+          <div class="devices-header-actions">
+            <button class="btn-secondary" id="btn-claim-current-device" title="Legg til denne maskinen i min enhetsliste">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+              <span>Gjør krav på denne maskinen</span>
+            </button>
+            <button class="btn-primary" id="btn-open-add-device">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              <span>Legg til enhet</span>
+            </button>
+          </div>
         </div>
-        <div class="session-chips-list" id="recent-chips-list">
-          <span style="font-size: 12px; color: var(--text-muted);">Ingen nylige økter ennå. Enheter du har koblet til vises her.</span>
+
+        <!-- Auth CTA Banner (if not logged in) -->
+        <div class="devices-auth-cta" id="devices-auth-cta">
+          <div class="card-icon-wrap" style="width: 48px; height: 48px; margin-bottom: 12px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+              <line x1="6" y1="6" x2="6.01" y2="6"></line>
+              <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+          </div>
+          <h3>Fjernstyr dine enheter med ett klikk</h3>
+          <p>Logg inn eller opprett en Penrose-konto for å samle Windows-, Mac- og Linux-serverne dine i en felles adressebok med permanent passord for uovervåket tilgang.</p>
+          <button class="btn-primary" id="btn-cta-login" style="margin-top: 16px;">Logg inn eller opprett konto</button>
         </div>
-      </section>
+
+        <!-- Devices List Container (if logged in) -->
+        <div class="devices-container" id="devices-container" style="display: none;">
+          <div class="devices-stats-bar">
+            <span id="devices-count-label">0 enheter lagret</span>
+            <button class="btn-icon-refresh" id="btn-refresh-devices" title="Oppdater status">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="devices-grid" id="devices-list">
+            <!-- Dynamic device cards injected here -->
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- Active Remote Session Fullscreen Viewport -->
@@ -332,6 +450,126 @@
       </div>
     </div>
 
+    <!-- Auth Modal (Login & Register) -->
+    <div class="modal-backdrop" id="auth-modal">
+      <div class="modal-dialog auth-dialog">
+        <div class="modal-header">
+          <div class="auth-tabs">
+            <button class="auth-tab-btn active" id="tab-auth-login">Logg inn</button>
+            <button class="auth-tab-btn" id="tab-auth-register">Opprett konto</button>
+          </div>
+          <button class="btn-close" id="btn-close-auth">&times;</button>
+        </div>
+
+        <div class="auth-alert" id="auth-alert" style="display: none;"></div>
+
+        <!-- Login Form -->
+        <form id="form-login" class="auth-form active">
+          <div class="input-group">
+            <label class="credential-label" for="login-email">E-postadresse</label>
+            <input type="email" id="login-email" class="input-field" placeholder="navn@bedrift.no" required autocomplete="email" />
+          </div>
+          <div class="input-group">
+            <label class="credential-label" for="login-password">Passord</label>
+            <input type="password" id="login-password" class="input-field" placeholder="••••••••" required autocomplete="current-password" />
+          </div>
+          <button type="submit" class="btn-primary" id="btn-submit-login" style="width: 100%; margin-top: 14px; padding: 13px;">
+            Logg inn
+          </button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="form-register" class="auth-form" style="display: none;">
+          <div class="input-group">
+            <label class="credential-label" for="reg-name">Fullt navn eller firmanavn</label>
+            <input type="text" id="reg-name" class="input-field" placeholder="Ola Nordmann" required autocomplete="name" />
+          </div>
+          <div class="input-group">
+            <label class="credential-label" for="reg-email">E-postadresse</label>
+            <input type="email" id="reg-email" class="input-field" placeholder="navn@bedrift.no" required autocomplete="email" />
+          </div>
+          <div class="input-group">
+            <label class="credential-label" for="reg-password">Passord (minst 8 tegn)</label>
+            <input type="password" id="reg-password" class="input-field" placeholder="••••••••" minlength="8" required autocomplete="new-password" />
+          </div>
+          <button type="submit" class="btn-primary" id="btn-submit-register" style="width: 100%; margin-top: 14px; padding: 13px;">
+            Opprett gratis konto
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- User Profile Popover / Dropdown Menu -->
+    <div class="user-popover" id="user-popover" style="display: none;">
+      <div class="user-popover-info">
+        <span class="user-name" id="user-display-name">Bruker</span>
+        <span class="user-email" id="user-display-email">bruker@penrose.no</span>
+      </div>
+      <div class="user-popover-divider"></div>
+      <button class="user-popover-item" id="popover-btn-devices">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+          <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+          <line x1="6" y1="6" x2="6.01" y2="6"></line>
+          <line x1="6" y1="18" x2="6.01" y2="18"></line>
+        </svg>
+        <span>Mine Enheter</span>
+      </button>
+      <button class="user-popover-item btn-logout" id="popover-btn-logout">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <span>Logg ut</span>
+      </button>
+    </div>
+
+    <!-- Add Device Modal -->
+    <div class="modal-backdrop" id="add-device-modal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3>Legg til enhet i adresseboken</h3>
+          <button class="btn-close" id="btn-close-add-device">&times;</button>
+        </div>
+
+        <form id="form-add-device">
+          <div class="input-group">
+            <label class="credential-label" for="add-device-id">Penrose-ID (9 siffer)</label>
+            <input type="text" id="add-device-id" class="input-field" placeholder="f.eks. 582 194 301" required maxlength="11" autocomplete="off" />
+          </div>
+
+          <div class="input-group">
+            <label class="credential-label" for="add-device-alias">Maskinnavn / Alias</label>
+            <input type="text" id="add-device-alias" class="input-field" placeholder="f.eks. Kontor Windows PC, Ubuntu Server" required autocomplete="off" />
+          </div>
+
+          <div class="input-group">
+            <label class="credential-label" for="add-device-platform">Operativsystem / Type</label>
+            <select id="add-device-platform" class="input-field select-field">
+              <option value="macOS">macOS</option>
+              <option value="Windows">Windows</option>
+              <option value="Linux">Linux Server</option>
+              <option value="generic">Annet</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="credential-label" for="add-device-perm-pass">Fast passord for uovervåket tilgang (Valgfritt)</label>
+            <input type="password" id="add-device-perm-pass" class="input-field" placeholder="Passordet konfigurert på maskinen" autocomplete="new-password" />
+            <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block;">
+              Hvis maskinen har uovervåket tilgang aktivert, kobler du til med ett klikk uten å måtte taste inn kode.
+            </span>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 18px;">
+            <button type="submit" class="btn-primary" style="flex: 1; padding: 13px;">Lagre enhet</button>
+            <button type="button" class="toolbar-btn" id="btn-cancel-add-device" style="padding: 13px 20px;">Avbryt</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- In-Session Drawer (Chat, File Transfer, Clipboard Sync) -->
     <aside class="session-drawer" id="session-drawer">
       <div class="drawer-header">
@@ -420,6 +658,6 @@
     <div class="toast-container" id="toast-container"></div>
   </div>
 
-  <script type="module" src="app.js?v=2027_v9"></script>
+  <script type="module" src="app.js?v=2027_v10"></script>
 </body>
 </html>

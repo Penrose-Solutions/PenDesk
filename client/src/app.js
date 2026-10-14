@@ -1,4 +1,4 @@
-import { WebRtcManager } from './webrtc-manager.js?v=2027_v5';
+import { WebRtcManager } from './webrtc-manager.js?v=2027_v6';
 
 // Check Tauri native environment
 const isTauri = typeof window !== 'undefined' && typeof window.__TAURI__ !== 'undefined';
@@ -61,8 +61,27 @@ const state = {
   inSession: false,
   unreadChat: 0,
   isDrawerOpen: false,
-  activeDrawerTab: 'chat'
+  activeDrawerTab: 'chat',
+
+  // Authentication & Device Management State
+  authToken: (typeof localStorage !== 'undefined' && localStorage.getItem('pendesk_auth_token')) || '',
+  currentUser: null,
+  devices: [],
+  activeView: 'desk',
+
+  // Unattended Access State
+  allowUnattended: (typeof localStorage !== 'undefined' && localStorage.getItem('pendesk_unattended_enabled') === 'true'),
+  permanentPassword: (typeof localStorage !== 'undefined' && localStorage.getItem('pendesk_permanent_password')) || ''
 };
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
 
 // DOM References
 const elLocalId = document.getElementById('local-desk-id');
@@ -76,6 +95,61 @@ const elBtnConnect = document.getElementById('btn-connect');
 const elBtnConnectText = document.getElementById('btn-connect-text');
 const elRecentChips = document.getElementById('recent-chips-list');
 const elRecentCount = document.getElementById('recent-count');
+
+// Navigation & Views
+const elNavRemote = document.getElementById('nav-remote');
+const elNavDevices = document.getElementById('nav-devices');
+const elViewTitle = document.getElementById('view-title');
+const elBtnAuthUser = document.getElementById('btn-auth-user');
+const elAuthUserLabel = document.getElementById('auth-user-label');
+const elViewDesk = document.getElementById('view-desk');
+const elViewDevices = document.getElementById('view-devices');
+
+// Unattended Access Elements (Card 1)
+const elToggleUnattended = document.getElementById('toggle-unattended');
+const elUnattendedInputs = document.getElementById('unattended-inputs');
+const elUnattendedPassInput = document.getElementById('unattended-pass-input');
+const elBtnToggleUnattendedPass = document.getElementById('btn-toggle-unattended-pass');
+const elBtnSaveUnattended = document.getElementById('btn-save-unattended');
+
+// Devices View Elements
+const elDevicesAuthCta = document.getElementById('devices-auth-cta');
+const elBtnCtaLogin = document.getElementById('btn-cta-login');
+const elDevicesContainer = document.getElementById('devices-container');
+const elDevicesList = document.getElementById('devices-list');
+const elDevicesCountLabel = document.getElementById('devices-count-label');
+const elBtnRefreshDevices = document.getElementById('btn-refresh-devices');
+const elBtnClaimCurrentDevice = document.getElementById('btn-claim-current-device');
+const elBtnOpenAddDevice = document.getElementById('btn-open-add-device');
+
+// Auth Modal & User Popover Elements
+const elAuthModal = document.getElementById('auth-modal');
+const elBtnCloseAuth = document.getElementById('btn-close-auth');
+const elTabAuthLogin = document.getElementById('tab-auth-login');
+const elTabAuthRegister = document.getElementById('tab-auth-register');
+const elAuthAlert = document.getElementById('auth-alert');
+const elFormLogin = document.getElementById('form-login');
+const elLoginEmail = document.getElementById('login-email');
+const elLoginPassword = document.getElementById('login-password');
+const elFormRegister = document.getElementById('form-register');
+const elRegName = document.getElementById('reg-name');
+const elRegEmail = document.getElementById('reg-email');
+const elRegPassword = document.getElementById('reg-password');
+const elUserPopover = document.getElementById('user-popover');
+const elUserDisplayName = document.getElementById('user-display-name');
+const elUserDisplayEmail = document.getElementById('user-display-email');
+const elPopoverBtnDevices = document.getElementById('popover-btn-devices');
+const elPopoverBtnLogout = document.getElementById('popover-btn-logout');
+
+// Add Device Modal Elements
+const elAddDeviceModal = document.getElementById('add-device-modal');
+const elBtnCloseAddDevice = document.getElementById('btn-close-add-device');
+const elBtnCancelAddDevice = document.getElementById('btn-cancel-add-device');
+const elFormAddDevice = document.getElementById('form-add-device');
+const elAddDeviceId = document.getElementById('add-device-id');
+const elAddDeviceAlias = document.getElementById('add-device-alias');
+const elAddDevicePlatform = document.getElementById('add-device-platform');
+const elAddDevicePermPass = document.getElementById('add-device-perm-pass');
 
 const elSessionOverlay = document.getElementById('session-overlay');
 const elRemoteVideo = document.getElementById('remote-video');
@@ -321,6 +395,8 @@ const rtc = new WebRtcManager({
   signalingUrl: state.signalingUrl,
   clientId: state.localId,
   password: state.localPasscode,
+  allowUnattended: state.allowUnattended,
+  permanentPassword: state.permanentPassword,
   deviceName: isTauri ? 'PenDesk Mac Desktop' : 'PenDesk Web Klient',
 
   onStatusChange: (status, message) => {
@@ -335,7 +411,42 @@ const rtc = new WebRtcManager({
     if (elLocalId) elLocalId.textContent = assignedId;
   },
 
-  onIncomingCall: async ({ fromId, deviceName, accept, reject }) => {
+  onIncomingCall: async ({ fromId, deviceName, unattended, accept, reject }) => {
+    // If incoming connection is authenticated via unattended permanent password:
+    if (unattended && state.allowUnattended) {
+      console.log('[PenDesk] Auto-accepting unattended remote session from:', fromId);
+      let localStream = null;
+      try {
+        localStream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            frameRate: { ideal: 60, max: 60 },
+            cursor: 'always'
+          },
+          audio: false
+        });
+
+        if (localStream) {
+          localStream.getVideoTracks().forEach((track) => {
+            track.onended = () => {
+              console.log('[PenDesk] Host stopped screen sharing via native browser bar');
+              rtc.disconnectSession('Skjermdeling ble stoppet av verten.');
+            };
+          });
+        }
+      } catch (err) {
+        console.warn('Kunne ikke hente skjermopptak for uovervåket økt:', err);
+      }
+
+      await accept(localStream);
+
+      if (elHostSessionBanner) {
+        if (elHostSessionText) elHostSessionText.textContent = `Du fjernstyres nå uovervåket av ${fromId}.`;
+        elHostSessionBanner.style.display = 'flex';
+      }
+      showToast(`Uovervåket økt godkjent fra ${fromId}`, 'info');
+      return;
+    }
+
     if (elIncomingModal && elBtnAcceptIncoming && elBtnRejectIncoming) {
       if (elIncomingDesc) {
         elIncomingDesc.textContent = `Operatør ${fromId} (${deviceName}) ber om å koble til og se skjermen din.`;
@@ -495,7 +606,10 @@ const rtc = new WebRtcManager({
     // Refresh one-time passcode for security
     state.localPasscode = generateRandomPasscode();
     if (elLocalPass) elLocalPass.textContent = state.localPasscode;
-    rtc.updateCredentials(state.localPasscode);
+    rtc.updateCredentials(state.localPasscode, {
+      allowUnattended: state.allowUnattended,
+      permanentPassword: state.permanentPassword
+    });
 
     console.log('[PenDesk] Økt avsluttet:', reason);
   }
@@ -811,6 +925,562 @@ function setupEventListeners() {
 
   setupInputForwarding();
   renderRecentConnections();
+  setupAuthAndDeviceListeners();
+}
+
+function setupAuthAndDeviceListeners() {
+  // Initialize Unattended Access UI from state
+  if (elToggleUnattended) {
+    elToggleUnattended.checked = state.allowUnattended;
+    if (elUnattendedInputs) {
+      elUnattendedInputs.style.display = state.allowUnattended ? 'flex' : 'none';
+    }
+  }
+  if (elUnattendedPassInput) {
+    elUnattendedPassInput.value = state.permanentPassword;
+  }
+
+  // Toggle Unattended Access
+  if (elToggleUnattended) {
+    elToggleUnattended.addEventListener('change', (e) => {
+      state.allowUnattended = e.target.checked;
+      localStorage.setItem('pendesk_unattended_enabled', String(state.allowUnattended));
+      if (elUnattendedInputs) {
+        elUnattendedInputs.style.display = state.allowUnattended ? 'flex' : 'none';
+      }
+      rtc.updateCredentials(state.localPasscode, {
+        allowUnattended: state.allowUnattended,
+        permanentPassword: state.permanentPassword
+      });
+      if (state.allowUnattended) {
+        showToast('Uovervåket tilgang aktivert for denne maskinen', 'info');
+      } else {
+        showToast('Uovervåket tilgang deaktivert', 'info');
+      }
+    });
+  }
+
+  // Save Permanent Password button
+  if (elBtnSaveUnattended && elUnattendedPassInput) {
+    elBtnSaveUnattended.addEventListener('click', (e) => {
+      e.preventDefault();
+      const pass = elUnattendedPassInput.value.trim();
+      state.permanentPassword = pass;
+      localStorage.setItem('pendesk_permanent_password', pass);
+      rtc.updateCredentials(state.localPasscode, {
+        allowUnattended: state.allowUnattended,
+        permanentPassword: state.permanentPassword
+      });
+      showToast('Permanent passord er lagret og oppdatert!', 'success');
+      playNotificationSound();
+    });
+  }
+
+  // Toggle Permanent Password visibility
+  if (elBtnToggleUnattendedPass && elUnattendedPassInput) {
+    elBtnToggleUnattendedPass.addEventListener('click', (e) => {
+      e.preventDefault();
+      const isPass = elUnattendedPassInput.type === 'password';
+      elUnattendedPassInput.type = isPass ? 'text' : 'password';
+    });
+  }
+
+  // Navigation switching
+  if (elNavRemote) {
+    elNavRemote.addEventListener('click', () => switchView('desk'));
+  }
+  if (elNavDevices) {
+    elNavDevices.addEventListener('click', () => switchView('devices'));
+  }
+  const btnLogo = document.getElementById('btn-logo');
+  if (btnLogo) {
+    btnLogo.addEventListener('click', () => switchView('desk'));
+  }
+
+  // Top Bar Profile / Auth Button
+  if (elBtnAuthUser) {
+    elBtnAuthUser.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (state.currentUser) {
+        if (elUserPopover) {
+          const isVis = elUserPopover.style.display === 'flex';
+          elUserPopover.style.display = isVis ? 'none' : 'flex';
+        }
+      } else {
+        openAuthModal('login');
+      }
+    });
+  }
+
+  // Click outside to close user popover
+  document.addEventListener('click', (e) => {
+    if (elUserPopover && elUserPopover.style.display === 'flex') {
+      if (!elUserPopover.contains(e.target) && e.target !== elBtnAuthUser) {
+        elUserPopover.style.display = 'none';
+      }
+    }
+  });
+
+  // User popover items
+  if (elPopoverBtnDevices) {
+    elPopoverBtnDevices.addEventListener('click', () => {
+      if (elUserPopover) elUserPopover.style.display = 'none';
+      switchView('devices');
+    });
+  }
+  if (elPopoverBtnLogout) {
+    elPopoverBtnLogout.addEventListener('click', () => {
+      handleLogout();
+    });
+  }
+
+  // Devices View Actions
+  if (elBtnCtaLogin) {
+    elBtnCtaLogin.addEventListener('click', () => {
+      openAuthModal('login');
+    });
+  }
+  if (elBtnClaimCurrentDevice) {
+    elBtnClaimCurrentDevice.addEventListener('click', () => {
+      claimCurrentDevice();
+    });
+  }
+  if (elBtnRefreshDevices) {
+    elBtnRefreshDevices.addEventListener('click', () => {
+      flashButton(elBtnRefreshDevices);
+      loadDevices();
+      showToast('Enhetsliste oppdatert', 'info');
+    });
+  }
+
+  // Auth Modal tabs & close
+  if (elBtnCloseAuth) {
+    elBtnCloseAuth.addEventListener('click', closeAuthModal);
+  }
+  if (elAuthModal) {
+    elAuthModal.addEventListener('click', (e) => {
+      if (e.target === elAuthModal) closeAuthModal();
+    });
+  }
+  if (elTabAuthLogin) {
+    elTabAuthLogin.addEventListener('click', () => switchAuthTab('login'));
+  }
+  if (elTabAuthRegister) {
+    elTabAuthRegister.addEventListener('click', () => switchAuthTab('register'));
+  }
+
+  // Login form submit
+  if (elFormLogin) {
+    elFormLogin.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setAuthAlert(null);
+      const email = elLoginEmail ? elLoginEmail.value.trim() : '';
+      const password = elLoginPassword ? elLoginPassword.value : '';
+      const btn = document.getElementById('btn-submit-login');
+      if (btn) { btn.textContent = 'Logger inn...'; btn.disabled = true; }
+      try {
+        await handleLogin(email, password);
+      } catch (err) {
+        setAuthAlert(err.message);
+      } finally {
+        if (btn) { btn.textContent = 'Logg inn'; btn.disabled = false; }
+      }
+    });
+  }
+
+  // Register form submit
+  if (elFormRegister) {
+    elFormRegister.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setAuthAlert(null);
+      const name = elRegName ? elRegName.value.trim() : '';
+      const email = elRegEmail ? elRegEmail.value.trim() : '';
+      const password = elRegPassword ? elRegPassword.value : '';
+      const btn = document.getElementById('btn-submit-register');
+      if (btn) { btn.textContent = 'Oppretter konto...'; btn.disabled = true; }
+      try {
+        await handleRegister(name, email, password);
+      } catch (err) {
+        setAuthAlert(err.message);
+      } finally {
+        if (btn) { btn.textContent = 'Opprett gratis konto'; btn.disabled = false; }
+      }
+    });
+  }
+
+  // Add Device Modal
+  if (elBtnOpenAddDevice) {
+    elBtnOpenAddDevice.addEventListener('click', () => {
+      if (!state.currentUser) {
+        openAuthModal('login');
+        return;
+      }
+      if (elAddDeviceModal) elAddDeviceModal.classList.add('active');
+      if (elAddDeviceId) elAddDeviceId.focus();
+    });
+  }
+  if (elBtnCloseAddDevice) {
+    elBtnCloseAddDevice.addEventListener('click', closeAddDeviceModal);
+  }
+  if (elBtnCancelAddDevice) {
+    elBtnCancelAddDevice.addEventListener('click', closeAddDeviceModal);
+  }
+  if (elAddDeviceModal) {
+    elAddDeviceModal.addEventListener('click', (e) => {
+      if (e.target === elAddDeviceModal) closeAddDeviceModal();
+    });
+  }
+  if (elAddDeviceId) {
+    elAddDeviceId.addEventListener('input', (e) => {
+      e.target.value = formatPartnerId(e.target.value);
+    });
+  }
+  if (elFormAddDevice) {
+    elFormAddDevice.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const deviceId = elAddDeviceId ? elAddDeviceId.value.trim() : '';
+      const alias = elAddDeviceAlias ? elAddDeviceAlias.value.trim() : '';
+      const platform = elAddDevicePlatform ? elAddDevicePlatform.value : 'generic';
+      const permanentPassword = elAddDevicePermPass ? elAddDevicePermPass.value.trim() : '';
+
+      if (deviceId.length < 9) {
+        alert('Oppgi en gyldig 9-sifret Penrose-ID');
+        return;
+      }
+
+      try {
+        await apiRequest('/api/devices', 'POST', {
+          deviceId,
+          alias,
+          platform,
+          permanentPassword
+        });
+        showToast(`Enheten "${alias}" ble lagret!`, 'success');
+        closeAddDeviceModal();
+        await loadDevices();
+        switchView('devices');
+      } catch (err) {
+        alert('Kunne ikke lagre enhet: ' + err.message);
+      }
+    });
+  }
+}
+
+function switchView(viewName) {
+  state.activeView = viewName;
+  if (elViewDesk) elViewDesk.style.display = viewName === 'desk' ? 'flex' : 'none';
+  if (elViewDevices) elViewDevices.style.display = viewName === 'devices' ? 'flex' : 'none';
+
+  if (elNavRemote) elNavRemote.classList.toggle('active', viewName === 'desk');
+  if (elNavDevices) elNavDevices.classList.toggle('active', viewName === 'devices');
+
+  if (elViewTitle) {
+    elViewTitle.textContent = viewName === 'devices' ? 'Mine Enheter' : 'Penrose Fjernhjelp';
+  }
+
+  if (viewName === 'devices') {
+    if (state.currentUser) {
+      loadDevices();
+    }
+  }
+}
+
+function openAuthModal(tab = 'login') {
+  if (!elAuthModal) return;
+  setAuthAlert(null);
+  switchAuthTab(tab);
+  elAuthModal.classList.add('active');
+  if (tab === 'login' && elLoginEmail) elLoginEmail.focus();
+  if (tab === 'register' && elRegName) elRegName.focus();
+}
+
+function closeAuthModal() {
+  if (elAuthModal) elAuthModal.classList.remove('active');
+  setAuthAlert(null);
+  if (elFormLogin) elFormLogin.reset();
+  if (elFormRegister) elFormRegister.reset();
+}
+
+function switchAuthTab(tab = 'login') {
+  if (elTabAuthLogin) elTabAuthLogin.classList.toggle('active', tab === 'login');
+  if (elTabAuthRegister) elTabAuthRegister.classList.toggle('active', tab === 'register');
+  if (elFormLogin) elFormLogin.style.display = tab === 'login' ? 'flex' : 'none';
+  if (elFormRegister) elFormRegister.style.display = tab === 'register' ? 'flex' : 'none';
+  setAuthAlert(null);
+}
+
+function setAuthAlert(msg) {
+  if (!elAuthAlert) return;
+  if (msg) {
+    elAuthAlert.textContent = msg;
+    elAuthAlert.style.display = 'block';
+  } else {
+    elAuthAlert.textContent = '';
+    elAuthAlert.style.display = 'none';
+  }
+}
+
+function closeAddDeviceModal() {
+  if (elAddDeviceModal) elAddDeviceModal.classList.remove('active');
+  if (elFormAddDevice) elFormAddDevice.reset();
+}
+
+// HTTP API Client
+async function apiRequest(endpoint, method = 'GET', body = null) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (state.authToken) {
+    headers['Authorization'] = `Bearer ${state.authToken}`;
+  }
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(endpoint, opts);
+  const data = await res.json().catch(() => ({ error: 'Ugyldig svar fra server' }));
+  if (!res.ok) {
+    throw new Error(data.error || 'Serverfeil');
+  }
+  return data;
+}
+
+async function loadCurrentUser() {
+  if (!state.authToken) {
+    state.currentUser = null;
+    updateUserAuthUI();
+    return;
+  }
+  try {
+    const data = await apiRequest('/api/auth/me');
+    state.currentUser = data.user;
+    updateUserAuthUI();
+    loadDevices();
+  } catch (err) {
+    console.warn('[PenDesk] Token invalid or expired, resetting auth:', err);
+    state.authToken = '';
+    localStorage.removeItem('pendesk_auth_token');
+    state.currentUser = null;
+    updateUserAuthUI();
+  }
+}
+
+function updateUserAuthUI() {
+  if (state.currentUser) {
+    if (elAuthUserLabel) elAuthUserLabel.textContent = state.currentUser.name;
+    if (elBtnAuthUser) elBtnAuthUser.classList.add('logged-in');
+    if (elUserDisplayName) elUserDisplayName.textContent = state.currentUser.name;
+    if (elUserDisplayEmail) elUserDisplayEmail.textContent = state.currentUser.email;
+    if (elDevicesAuthCta) elDevicesAuthCta.style.display = 'none';
+    if (elDevicesContainer) elDevicesContainer.style.display = 'flex';
+  } else {
+    if (elAuthUserLabel) elAuthUserLabel.textContent = 'Logg inn';
+    if (elBtnAuthUser) elBtnAuthUser.classList.remove('logged-in');
+    if (elDevicesAuthCta) elDevicesAuthCta.style.display = 'flex';
+    if (elDevicesContainer) elDevicesContainer.style.display = 'none';
+  }
+}
+
+async function handleLogin(email, password) {
+  const data = await apiRequest('/api/auth/login', 'POST', { email, password });
+  state.authToken = data.token;
+  localStorage.setItem('pendesk_auth_token', data.token);
+  state.currentUser = data.user;
+  updateUserAuthUI();
+  await loadDevices();
+  showToast(`Logget inn som ${data.user.name}`, 'success');
+  closeAuthModal();
+}
+
+async function handleRegister(name, email, password) {
+  const data = await apiRequest('/api/auth/register', 'POST', { name, email, password });
+  state.authToken = data.token;
+  localStorage.setItem('pendesk_auth_token', data.token);
+  state.currentUser = data.user;
+  updateUserAuthUI();
+  await loadDevices();
+  showToast(`Velkommen! Konto opprettet for ${data.user.name}`, 'success');
+  closeAuthModal();
+}
+
+function handleLogout() {
+  state.authToken = '';
+  localStorage.removeItem('pendesk_auth_token');
+  state.currentUser = null;
+  state.devices = [];
+  updateUserAuthUI();
+  if (elUserPopover) elUserPopover.style.display = 'none';
+  switchView('desk');
+  showToast('Du er logget ut', 'info');
+}
+
+async function loadDevices() {
+  if (!state.authToken) return;
+  try {
+    const data = await apiRequest('/api/devices');
+    state.devices = data.devices || [];
+    renderDevicesList();
+  } catch (err) {
+    console.error('[PenDesk] Failed to load devices:', err);
+  }
+}
+
+function renderDevicesList() {
+  if (!elDevicesList) return;
+  elDevicesList.innerHTML = '';
+  const onlineCount = state.devices.filter(d => d.isOnline).length;
+  if (elDevicesCountLabel) {
+    elDevicesCountLabel.textContent = `${state.devices.length} enheter registrert (${onlineCount} online nå)`;
+  }
+
+  if (state.devices.length === 0) {
+    elDevicesList.innerHTML = `
+      <div style="grid-column: 1 / -1; padding: 36px; text-align: center; color: var(--text-muted); background: var(--bg-surface); border: 1px dashed var(--border-subtle); border-radius: var(--radius-md);">
+        <p style="font-size: 14px; margin-bottom: 8px;">Ingen enheter lagret i adresseboken din ennå.</p>
+        <span style="font-size: 12px;">Legg til maskiner eller servere for å koble til med ett klikk uten engangskode.</span>
+      </div>
+    `;
+    return;
+  }
+
+  state.devices.forEach((device) => {
+    const card = document.createElement('div');
+    card.className = 'device-card';
+
+    const platformIcons = {
+      macOS: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20.94c1.5 0 2.75-.75 3.5-.75.75 0 1.94.75 3.5.75 1.5 0 3-1.5 3.8-3.04-1.63-.95-2.02-3.14-1.02-4.63.78-1.15 2.12-1.78 2.22-1.83-1.03-1.5-2.61-1.7-3.16-1.72-1.4-.14-2.73.83-3.44.83-.71 0-1.8-.8-2.95-.78-1.53.02-2.93.89-3.71 2.25-1.59 2.75-.41 6.8 1.13 9.02.76 1.09 1.66 2.3 2.83 2.25z"></path></svg>`,
+      Windows: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8"></rect><rect x="13" y="3" width="8" height="8"></rect><rect x="3" y="13" width="8" height="8"></rect><rect x="13" y="13" width="8" height="8"></rect></svg>`,
+      Linux: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"></rect><rect x="2" y="14" width="20" height="8" rx="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>`,
+      generic: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`
+    };
+
+    const iconSvg = platformIcons[device.platform] || platformIcons.generic;
+    const statusHtml = device.isOnline
+      ? `<span class="badge-online"><span class="status-dot"></span>Online</span>`
+      : `<span class="badge-offline">Offline</span>`;
+
+    const unattendedHtml = device.hasPermanentPassword
+      ? `<span style="color: var(--accent-success); font-size: 11px;">&#10003; Fast passord lagret</span>`
+      : `<span style="color: var(--text-muted); font-size: 11px;">Mangler fast passord</span>`;
+
+    card.innerHTML = `
+      <div class="device-card-header">
+        <div class="device-info">
+          <div class="platform-icon">${iconSvg}</div>
+          <div class="device-title-wrap">
+            <h4>${escapeHtml(device.alias)}</h4>
+            <div class="device-id-mono">${escapeHtml(device.deviceId)}</div>
+          </div>
+        </div>
+        ${statusHtml}
+      </div>
+
+      <div class="device-meta-row">
+        <span>${escapeHtml(device.platform || 'Server')}</span>
+        ${unattendedHtml}
+      </div>
+
+      <div class="device-card-footer">
+        <button class="btn-device-connect" id="btn-dial-dev-${device.id}" ${!device.isOnline ? 'title="Enheten er offline nå"' : ''}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14"></path>
+            <path d="M12 5l7 7-7 7"></path>
+          </svg>
+          <span>Fjernstyr ${device.hasPermanentPassword ? '(Uovervåket)' : ''}</span>
+        </button>
+        <button class="btn-device-delete" id="btn-del-dev-${device.id}" title="Fjern enhet">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+      </div>
+    `;
+
+    const btnDial = card.querySelector(`#btn-dial-dev-${device.id}`);
+    if (btnDial) {
+      btnDial.addEventListener('click', async () => {
+        if (!device.isOnline) {
+          if (!confirm('Maskinen er markert som offline på VPS. Vil du likevel prøve å koble til?')) {
+            return;
+          }
+        }
+        await autoConnectToDevice(device);
+      });
+    }
+
+    const btnDel = card.querySelector(`#btn-del-dev-${device.id}`);
+    if (btnDel) {
+      btnDel.addEventListener('click', async () => {
+        if (confirm(`Vil du fjerne "${device.alias}" (${device.deviceId}) fra listen din?`)) {
+          try {
+            await apiRequest(`/api/devices/${device.id}`, 'DELETE');
+            showToast(`"${device.alias}" ble fjernet`, 'info');
+            await loadDevices();
+          } catch (err) {
+            alert('Kunne ikke slette enhet: ' + err.message);
+          }
+        }
+      });
+    }
+
+    elDevicesList.appendChild(card);
+  });
+}
+
+async function autoConnectToDevice(device) {
+  if (!device.hasPermanentPassword) {
+    switchView('desk');
+    if (elRemoteIdInput) elRemoteIdInput.value = device.deviceId;
+    if (elRemotePassInput) {
+      elRemotePassInput.value = '';
+      elRemotePassInput.focus();
+    }
+    showToast(`Oppgi engangskode for ${device.alias}`, 'info');
+    return;
+  }
+
+  try {
+    if (elSessionOverlay) {
+      if (elStreamPlaceholder) elStreamPlaceholder.style.display = 'flex';
+      if (elRemoteVideo) elRemoteVideo.style.display = 'none';
+      elSessionOverlay.classList.add('active');
+    }
+    showToast(`Kobler uovervåket til ${device.alias}...`, 'info');
+    await rtc.dial(device.deviceId, device.permanentPassword);
+    saveRecentConnection(device.deviceId);
+  } catch (err) {
+    if (elSessionOverlay) elSessionOverlay.classList.remove('active');
+    alert(`Tilkobling til ${device.alias} mislyktes: ` + err.message);
+  }
+}
+
+async function claimCurrentDevice() {
+  if (!state.currentUser) {
+    openAuthModal('login');
+    return;
+  }
+  const currentId = state.localId;
+  if (!currentId) {
+    alert('Ingen aktiv Penrose-ID tildelt ennå.');
+    return;
+  }
+  const defaultAlias = `Min ${navigator.platform.includes('Mac') ? 'Mac' : (navigator.platform.includes('Win') ? 'Windows PC' : 'Linux')} (${currentId.slice(0, 3)})`;
+  const alias = prompt('Oppgi navn på denne maskinen i din liste:', defaultAlias);
+  if (!alias) return;
+
+  const platform = navigator.platform.includes('Mac') ? 'macOS' : (navigator.platform.includes('Win') ? 'Windows' : 'Linux');
+  const permanentPassword = state.permanentPassword || '';
+
+  try {
+    await apiRequest('/api/devices', 'POST', {
+      deviceId: currentId,
+      alias,
+      platform,
+      permanentPassword
+    });
+    showToast(`Denne maskinen ble lagret som "${alias}"`, 'success');
+    await loadDevices();
+    switchView('devices');
+  } catch (err) {
+    alert('Kunne ikke gjøre krav på enheten: ' + err.message);
+  }
 }
 
 function setupInputForwarding() {
@@ -907,9 +1577,11 @@ function renderRecentConnections() {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
+    loadCurrentUser();
     rtc.connectSignaling();
   });
 } else {
   setupEventListeners();
+  loadCurrentUser();
   rtc.connectSignaling();
 }

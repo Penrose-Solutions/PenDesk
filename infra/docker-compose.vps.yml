@@ -15,6 +15,8 @@ services:
       - TURN_PORT=3478
     ports:
       - "127.0.0.1:8080:8080"
+    volumes:
+      - /opt/pendesk/data:/app/data
 
   # Coturn STUN & TURN Relay for NAT Traversal
   coturn:

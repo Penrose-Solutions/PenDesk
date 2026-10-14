@@ -8,6 +8,8 @@ export class WebRtcManager {
     this.signalingUrl = options.signalingUrl || 'wss://hjelp.penrose.no/ws';
     this.clientId = options.clientId || null;
     this.password = options.password || '';
+    this.permanentPassword = options.permanentPassword || '';
+    this.allowUnattended = Boolean(options.allowUnattended);
     this.deviceName = options.deviceName || 'PenDesk Client';
 
     this.ws = null;
@@ -61,6 +63,8 @@ export class WebRtcManager {
           type: 'register',
           clientId: this.clientId,
           password: this.password,
+          permanentPassword: this.permanentPassword,
+          allowUnattended: this.allowUnattended,
           deviceName: this.deviceName
         })
       );
@@ -113,14 +117,22 @@ export class WebRtcManager {
     }, 3000);
   }
 
-  updateCredentials(password) {
-    this.password = password;
+  updateCredentials(password, unattendedOptions = {}) {
+    if (password !== undefined) this.password = password;
+    if (unattendedOptions.permanentPassword !== undefined) {
+      this.permanentPassword = unattendedOptions.permanentPassword;
+    }
+    if (unattendedOptions.allowUnattended !== undefined) {
+      this.allowUnattended = Boolean(unattendedOptions.allowUnattended);
+    }
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(
         JSON.stringify({
           type: 'register',
           clientId: this.clientId,
           password: this.password,
+          permanentPassword: this.permanentPassword,
+          allowUnattended: this.allowUnattended,
           deviceName: this.deviceName
         })
       );
@@ -160,6 +172,7 @@ export class WebRtcManager {
         this.onIncomingCall({
           fromId: msg.fromId,
           deviceName: msg.deviceName,
+          unattended: Boolean(msg.unattended),
           accept: async (localMediaStream) => {
             await this._acceptIncoming(msg.fromId, msg.sdpOffer, localMediaStream);
           },

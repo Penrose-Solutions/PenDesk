@@ -21,3 +21,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Databases & local persistent storage
+data/
+*.db
+*.db-wal
+*.db-shm
